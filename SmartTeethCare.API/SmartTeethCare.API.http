@@ -1,0 +1,6 @@
+@SmartTeethCare.API_HostAddress = http://localhost:5039
+
+GET {{SmartTeethCare.API_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
