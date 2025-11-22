@@ -2,7 +2,9 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using SmartTeethCare.Core.Entities;
+using SmartTeethCare.Core.Interfaces.Services;
 using SmartTeethCare.Repository.Data;
+using SmartTeethCare.Service;
 
 namespace SmartTeethCare.API
 {
@@ -25,6 +27,7 @@ namespace SmartTeethCare.API
 
 			builder.Services.AddDbContext<ApplicationDbContext>(options =>
 					options.UseSqlServer(connectionString));
+            builder.Services.AddScoped(typeof(IAuthService), typeof(AuthService));
             builder.Services.AddIdentity<User, IdentityRole>()
                    .AddEntityFrameworkStores<ApplicationDbContext>()
                    .AddDefaultTokenProviders();

@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
 using SmartTeethCare.API.DTOs;
 using SmartTeethCare.Core.Entities;
+using SmartTeethCare.Core.Interfaces.Services;
 using SmartTeethCare.Repository.Data;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
@@ -18,14 +19,20 @@ namespace SmartTeethCare.API.Controllers
         private readonly SignInManager<User> _signInManager;
         private readonly RoleManager<IdentityRole> _roleManager;
         private readonly ApplicationDbContext _context;
+        private readonly IAuthService _authService;
 
-        public AccountController(UserManager<User> userManager,SignInManager<User> signInManager, RoleManager<IdentityRole> roleManager, ApplicationDbContext context)
+        public AccountController(UserManager<User> userManager, SignInManager<User> signInManager, RoleManager<IdentityRole> roleManager, ApplicationDbContext context, IAuthService authService)
         {
             _userManager = userManager;
             _signInManager = signInManager;
             _roleManager = roleManager;
             _context = context;
+            _authService = authService;
+
         }
+
+        public IAuthService AuthService { get; }
+
         [HttpPost("login")]
         public async Task<ActionResult<UserDTO>> Login(LoginDTO model)
         {
@@ -39,14 +46,13 @@ namespace SmartTeethCare.API.Controllers
             if (!result.Succeeded)
                 return Unauthorized("Invalid Email or Password");
 
-            // Generate JWT Token
-            //var token = GenerateToken(user);
 
             return Ok(new UserDTO
             {
                 UserName = user.UserName,
                 Email = user.Email,
-                Token = "This will be token"
+                Role = (await _userManager.GetRolesAsync(user)).FirstOrDefault(),
+                Token = await _authService.CreateTokenAsync(user, _userManager)    // Generate JWT Token
             });
         }
 
@@ -84,8 +90,7 @@ namespace SmartTeethCare.API.Controllers
             // Assign selected role
             await _userManager.AddToRoleAsync(user, model.Role);
 
-            // 5) Generate token (optional)
-            //var token = GenerateToken(user);
+
             if (model.Role == "Doctor")
             {
                 var doctor = new Doctor
@@ -111,38 +116,16 @@ namespace SmartTeethCare.API.Controllers
                 await _context.SaveChangesAsync();
             }
             // 6) Return response
-            return Ok(new
+            return Ok(new UserDTO()
             {
                 UserName = user.UserName,
                 Email = user.Email,
-                roleAssigned = model.Role,
-                Token = "This will be token"
+                Role = model.Role,
+                Token = await _authService.CreateTokenAsync(user, _userManager) // Generate JWT Token
             });
+
+
+
         }
-
-
-        //private string GenerateToken(User user)
-        //{
-        //    var claims = new[]
-        //    {
-        //        new Claim(JwtRegisteredClaimNames.Sub, user.Id),
-        //        new Claim(JwtRegisteredClaimNames.Email, user.Email),
-        //        new Claim("uid", user.Id),
-        //    };
-
-        //    var key = new SymmetricSecurityKey(
-        //        Encoding.UTF8.GetBytes(_config["JWT:Key"]));
-
-        //    var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
-
-        //    var token = new JwtSecurityToken(
-        //        issuer: _config["JWT:Issuer"],
-        //        audience: _config["JWT:Audience"],
-        //        claims: claims,
-        //        expires: DateTime.UtcNow.AddHours(3),
-        //        signingCredentials: creds
-        //    );
-        //    return new JwtSecurityTokenHandler().WriteToken(token);
-        //}
     }
 }
