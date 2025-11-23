@@ -31,7 +31,7 @@ namespace SmartTeethCare.API.Controllers
 
         }
 
-        public IAuthService AuthService { get; }
+        
 
         [HttpPost("login")]
         public async Task<ActionResult<UserDTO>> Login(LoginDTO model)
