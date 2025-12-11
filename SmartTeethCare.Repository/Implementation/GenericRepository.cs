@@ -2,11 +2,7 @@
 using SmartTeethCare.Core.Entities;
 using SmartTeethCare.Core.Interfaces.Repositories;
 using SmartTeethCare.Repository.Data;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+
 
 namespace SmartTeethCare.Repository.Implementation
 {
@@ -45,6 +41,8 @@ namespace SmartTeethCare.Repository.Implementation
             _dbContext.Set<T>().Update(entity);
             await _dbContext.SaveChangesAsync();
         }
+
+
 
     }
 }
