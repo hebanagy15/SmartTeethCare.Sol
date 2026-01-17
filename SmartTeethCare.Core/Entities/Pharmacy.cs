@@ -14,8 +14,10 @@ namespace SmartTeethCare.Core.Entities
         public string Location { get; set; }
         public string Phone { get; set; }
         public string WorkingHours { get; set; }
+        public ICollection<PharmacyMedicine>? PharmacyMedicines { get; set; }
 
-		
-	}
+
+
+    }
 
 }
