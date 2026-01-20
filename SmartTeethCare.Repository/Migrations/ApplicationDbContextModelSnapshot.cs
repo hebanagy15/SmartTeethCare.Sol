@@ -252,7 +252,7 @@ namespace SmartTeethCare.Repository.Migrations
                     b.Property<int>("Salary")
                         .HasColumnType("int");
 
-                    b.Property<int>("SpecialtyID")
+                    b.Property<int?>("SpecialtyID")
                         .HasColumnType("int");
 
                     b.Property<string>("UserId")
@@ -683,8 +683,7 @@ namespace SmartTeethCare.Repository.Migrations
                     b.HasOne("SmartTeethCare.Core.Entities.Speciality", "Speciality")
                         .WithMany("doctors")
                         .HasForeignKey("SpecialtyID")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("SmartTeethCare.Core.Entities.User", "User")
                         .WithOne("Doctor")

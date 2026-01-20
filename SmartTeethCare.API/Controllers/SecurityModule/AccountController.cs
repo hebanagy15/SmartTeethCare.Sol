@@ -1,15 +1,12 @@
-﻿using Microsoft.AspNetCore.Identity;
+﻿using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.IdentityModel.Tokens;
 using SmartTeethCare.API.DTOs;
 using SmartTeethCare.Core.Entities;
 using SmartTeethCare.Core.Interfaces.Services;
 using SmartTeethCare.Repository.Data;
-using System.IdentityModel.Tokens.Jwt;
-using System.Security.Claims;
-using System.Text;
 
-namespace SmartTeethCare.API.Controllers
+namespace SmartTeethCare.API.Controllers.SecurityModule
 {
     [Route("api/[controller]")]
     [ApiController]
@@ -30,9 +27,6 @@ namespace SmartTeethCare.API.Controllers
             _authService = authService;
 
         }
-
-        
-
         [HttpPost("login")]
         public async Task<ActionResult<UserDTO>> Login(LoginDTO model)
         {
@@ -123,9 +117,11 @@ namespace SmartTeethCare.API.Controllers
                 Role = model.Role,
                 Token = await _authService.CreateTokenAsync(user, _userManager) // Generate JWT Token
             });
-
-
-
         }
+
+
     }
+
+
+
 }

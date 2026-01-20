@@ -12,8 +12,8 @@ using SmartTeethCare.Repository.Data;
 namespace SmartTeethCare.Repository.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20260117204117_InitialCreate")]
-    partial class InitialCreate
+    [Migration("20260120133039_initialCreate")]
+    partial class initialCreate
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -255,7 +255,7 @@ namespace SmartTeethCare.Repository.Migrations
                     b.Property<int>("Salary")
                         .HasColumnType("int");
 
-                    b.Property<int>("SpecialtyID")
+                    b.Property<int?>("SpecialtyID")
                         .HasColumnType("int");
 
                     b.Property<string>("UserId")
@@ -686,8 +686,7 @@ namespace SmartTeethCare.Repository.Migrations
                     b.HasOne("SmartTeethCare.Core.Entities.Speciality", "Speciality")
                         .WithMany("doctors")
                         .HasForeignKey("SpecialtyID")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("SmartTeethCare.Core.Entities.User", "User")
                         .WithOne("Doctor")
