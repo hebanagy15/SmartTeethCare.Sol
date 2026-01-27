@@ -59,5 +59,14 @@ namespace SmartTeethCare.Web.Areas.Patient.Controllers
                 return BadRequest(new { error = ex.Message });
             }
         }
+
+        [HttpGet("{appointmentId}/details")]
+        public async Task<IActionResult> GetAppointmentDetails(int appointmentId)
+        {
+            var result = await _appointmentService
+                .GetAppointmentDetails(appointmentId, User);
+
+            return Ok(result);
+        }
     }
 }

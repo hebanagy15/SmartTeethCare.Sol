@@ -9,6 +9,6 @@ namespace SmartTeethCare.Core.Interfaces.Services.PatientModule
         Task BookAppointment(BookAppointmentDto dto, ClaimsPrincipal user);
         Task<List<Appointment>> GetMyAppointments(ClaimsPrincipal user);
         Task CancelAppointment(int appointmentId, ClaimsPrincipal user);
-        ///
+        Task<AppointmentDetailsDTO> GetAppointmentDetails(int appointmentId, ClaimsPrincipal user);
     }
 }

@@ -1,8 +1,10 @@
-﻿using SmartTeethCare.Core.DTOs.PatientModule;
+﻿using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
+using SmartTeethCare.Core.DTOs.PatientModule;
 using SmartTeethCare.Core.Entities;
 using SmartTeethCare.Core.Interfaces.Services.PatientModule;
 using SmartTeethCare.Core.Interfaces.UnitOfWork;
-using Microsoft.EntityFrameworkCore;
+using System;
 using System.Security.Claims;
 
 namespace SmartTeethCare.Service.PatientModule
@@ -10,10 +12,12 @@ namespace SmartTeethCare.Service.PatientModule
     public class PatientAppointmentService : IPatientAppointmentService
     {
         private readonly IUnitOfWork _uow;
+        private readonly UserManager<User> _userManager;
 
-        public PatientAppointmentService(IUnitOfWork uow)
+        public PatientAppointmentService(IUnitOfWork uow , UserManager<User> userManager)
         {
             _uow = uow;
+            _userManager = userManager;
         }
 
         public async Task BookAppointment(BookAppointmentDto dto, ClaimsPrincipal user)
@@ -90,6 +94,49 @@ namespace SmartTeethCare.Service.PatientModule
             return orderedAppointments;
         }
 
+        public async Task<AppointmentDetailsDTO> GetAppointmentDetails(int appointmentId, ClaimsPrincipal user)
+        {
+            
+            var patientId = int.Parse(user.FindFirstValue(ClaimTypes.NameIdentifier));
+
+            
+            var appointment = (await _uow.Repository<Appointment>()
+                .FindAsync(a => a.Id == appointmentId))
+                .FirstOrDefault();
+
+            if (appointment == null)
+                throw new Exception("Appointment not found");
+
+            
+            var doctor = await _uow.Repository<Doctor>().GetByIdAsync(appointment.DoctorID);
+            var patient = await _uow.Repository<Patient>().GetByIdAsync(appointment.PatientID);
+
+            var doctorUser = await _userManager.FindByIdAsync(doctor.UserId);
+            var patientUser = await _userManager.FindByIdAsync(patient.UserId);
+
+            var doctorName = doctorUser?.UserName;
+            var patientName = patientUser?.UserName;
+
+
+            var dto = new AppointmentDetailsDTO
+            {
+                Id = appointment.Id,
+                DoctorId = appointment.DoctorID,
+                DoctorName = doctorName ,
+                PatientId = appointment.PatientID,
+                PatientName = patientName,
+                Date = appointment.Date,
+                Status = appointment.Status,
+                CreatedAt = appointment.CreatedAt,
+                Amount = appointment.Amount
+            };
+
+            return dto;
+        }
+
+
     }
 
 }
+
+
