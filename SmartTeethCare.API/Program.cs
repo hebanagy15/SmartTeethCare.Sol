@@ -4,9 +4,13 @@ using Microsoft.EntityFrameworkCore;
 using SmartTeethCare.Core.Entities;
 using SmartTeethCare.Core.Interfaces.Repositories;
 using SmartTeethCare.Core.Interfaces.Services;
+using SmartTeethCare.Core.Interfaces.Services.PatientModule;
+using SmartTeethCare.Core.Interfaces.UnitOfWork;
 using SmartTeethCare.Repository.Data;
 using SmartTeethCare.Repository.Implementation;
 using SmartTeethCare.Service;
+using SmartTeethCare.Service.PatientModule;
+using SmartTeethCare.Web.Areas.Patient.Controllers;
 
 namespace SmartTeethCare.API
 {
@@ -29,11 +33,23 @@ namespace SmartTeethCare.API
 
 			builder.Services.AddDbContext<ApplicationDbContext>(options =>
 					options.UseSqlServer(connectionString));
-            builder.Services.AddScoped(typeof(IAuthService), typeof(AuthService));
+            
             builder.Services.AddIdentity<User, IdentityRole>()
                    .AddEntityFrameworkStores<ApplicationDbContext>()
                    .AddDefaultTokenProviders();
+
+            
             builder.Services.AddScoped(typeof(IGenericRepository<>),typeof(GenericRepository<>));
+            builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
+
+            builder.Services.AddScoped(typeof(IAuthService), typeof(AuthService));
+            builder.Services.AddScoped<IPatientAppointmentService, PatientAppointmentService>();
+            
+            //builder.Services.AddControllers()
+            //       .AddApplicationPart(typeof(PatientAppointmentController).Assembly);
+
+
+
 
             builder.Services.AddAuthorization();
 

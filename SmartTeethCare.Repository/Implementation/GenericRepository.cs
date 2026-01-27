@@ -2,6 +2,7 @@
 using SmartTeethCare.Core.Entities;
 using SmartTeethCare.Core.Interfaces.Repositories;
 using SmartTeethCare.Repository.Data;
+using System.Linq.Expressions;
 
 
 namespace SmartTeethCare.Repository.Implementation
@@ -41,8 +42,14 @@ namespace SmartTeethCare.Repository.Implementation
             _dbContext.Set<T>().Update(entity);
             await _dbContext.SaveChangesAsync();
         }
-
-
+        public async Task<bool> AnyAsync(Expression<Func<T, bool>> predicate)
+        {
+            return await _dbContext.Set<T>().AnyAsync(predicate);
+        }
+        public async Task<IEnumerable<T>> FindAsync(Expression<Func<T, bool>> predicate)
+        {
+            return await _dbContext.Set<T>().Where(predicate).ToListAsync();
+        }
 
     }
 }

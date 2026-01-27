@@ -5,7 +5,7 @@ namespace SmartTeethCare.API.Controllers.PatientModule
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class PatientAppointmentsController : ControllerBase
+    public class PatientPaymentController : ControllerBase
     {
     }
 }

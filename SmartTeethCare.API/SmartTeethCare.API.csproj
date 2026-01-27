@@ -21,4 +21,8 @@
     <ProjectReference Include="..\SmartTeethCare.Service\SmartTeethCare.Service.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="DTOs\PatientModule\" />
+  </ItemGroup>
+
 </Project>
