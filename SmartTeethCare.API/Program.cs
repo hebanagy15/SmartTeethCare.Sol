@@ -1,6 +1,8 @@
 
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
+using Microsoft.OpenApi.Models;
 using SmartTeethCare.Core.Entities;
 using SmartTeethCare.Core.Interfaces.Repositories;
 using SmartTeethCare.Core.Interfaces.Services;
@@ -11,6 +13,7 @@ using SmartTeethCare.Repository.Implementation;
 using SmartTeethCare.Service;
 using SmartTeethCare.Service.PatientModule;
 using SmartTeethCare.Web.Areas.Patient.Controllers;
+using System.Text;
 
 namespace SmartTeethCare.API
 {
@@ -25,10 +28,37 @@ namespace SmartTeethCare.API
             builder.Services.AddControllers();
             // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
             builder.Services.AddEndpointsApiExplorer();
-            builder.Services.AddSwaggerGen();
+            builder.Services.AddSwaggerGen(c =>
+            {
+                c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+                {
+                    Name = "Authorization",
+                    Type = SecuritySchemeType.Http,
+                    Scheme = "bearer",
+                    BearerFormat = "JWT",
+                    In = ParameterLocation.Header,
+                    Description = "Enter: Bearer {your JWT token}"
+                });
+
+                c.AddSecurityRequirement(new OpenApiSecurityRequirement
+    {
+        {
+            new OpenApiSecurityScheme
+            {
+                Reference = new OpenApiReference
+                {
+                    Type = ReferenceType.SecurityScheme,
+                    Id = "Bearer"
+                }
+            },
+            Array.Empty<string>()
+        }
+    });
+            });
 
 
-			var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");      //from appsettings.json
+
+            var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");      //from appsettings.json
 
 
 			builder.Services.AddDbContext<ApplicationDbContext>(options =>
@@ -51,7 +81,27 @@ namespace SmartTeethCare.API
 
 
 
+           
+            builder.Services.AddAuthentication("Bearer")
+           .AddJwtBearer("Bearer", options =>
+           {
+                  options.TokenValidationParameters = new TokenValidationParameters
+                  {
+                        ValidateIssuer = true,
+                        ValidateAudience = true,
+                        ValidateLifetime = true,
+                        ValidateIssuerSigningKey = true,
+
+                        ValidIssuer = builder.Configuration["JWT:Issuer"],
+                        ValidAudience = builder.Configuration["JWT:Audience"],
+                        IssuerSigningKey = new SymmetricSecurityKey(
+                            Encoding.UTF8.GetBytes(builder.Configuration["JWT:SecretKey"])
+           )
+        };
+    });
+
             builder.Services.AddAuthorization();
+
 
             var app = builder.Build();
 

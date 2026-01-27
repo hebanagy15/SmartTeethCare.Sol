@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore.Metadata.Internal;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
 using SmartTeethCare.Core.Entities;
@@ -25,7 +26,8 @@ namespace SmartTeethCare.Service
             {
                 new Claim(ClaimTypes.Name, user.UserName),
                 new Claim(ClaimTypes.Email, user.Email),
-                
+                new Claim(ClaimTypes.NameIdentifier, user.Id),
+
             };
 
             var userRoles = await userManager.GetRolesAsync(user);
