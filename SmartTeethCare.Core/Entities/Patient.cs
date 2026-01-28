@@ -12,9 +12,11 @@ namespace SmartTeethCare.Core.Entities
         public string UserId { get; set; }
         public User User { get; set; }
 
-        public ICollection<Prescription> Prescriptions { get; set; }
-        public ICollection<Appointment>? Appointments { get; set; }
-        public ICollection<Review>? Reviews { get; set; }
+        public ICollection<Prescription> Prescriptions { get; set; } = new List<Prescription>();
+        public ICollection<Appointment> Appointments { get; set; } = new List<Appointment>();  
+        public ICollection<Review> Reviews { get; set; } = new List<Review>();             // Empty list to avoid null reference
+        public ICollection<MedicalHistory> MedicalHistories { get; set; } = new List<MedicalHistory>();
+
 
     }
 }
