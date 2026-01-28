@@ -24,6 +24,12 @@ namespace SmartTeethCare.Repository.Configurations
                    .WithMany(p => p.Appointments)
                    .HasForeignKey(a => a.PatientID)
                    .OnDelete(DeleteBehavior.Cascade);
+
+            //  Relationship with Prescriptions (1:N)
+            builder.HasMany(a => a.Prescriptions)
+                   .WithOne(p => p.Appointment)
+                   .HasForeignKey(p => p.AppointmentId)
+                   .OnDelete(DeleteBehavior.Restrict);
         }
     }
 }
