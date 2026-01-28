@@ -1,7 +1,9 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Query;
 using SmartTeethCare.Core.Entities;
 using SmartTeethCare.Core.Interfaces.Repositories;
 using SmartTeethCare.Repository.Data;
+using System.Linq.Expressions;
 
 
 namespace SmartTeethCare.Repository.Implementation
@@ -41,7 +43,22 @@ namespace SmartTeethCare.Repository.Implementation
             _dbContext.Set<T>().Update(entity);
             await _dbContext.SaveChangesAsync();
         }
+        public async Task<bool> AnyAsync(Expression<Func<T, bool>> predicate)
+        {
+            return await _dbContext.Set<T>().AnyAsync(predicate);
+        }
+        public async Task<List<T>> FindAsync(Expression<Func<T, bool>> predicate = null,Func<IQueryable<T>, IIncludableQueryable<T, object>> include = null)
+        {
+            IQueryable<T> query = _dbContext.Set<T>();
 
+            if (predicate != null)
+                query = query.Where(predicate);
+
+            if (include != null)
+                query = include(query);
+
+            return await query.ToListAsync();
+        }
 
 
     }

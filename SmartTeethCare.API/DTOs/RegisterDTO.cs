@@ -19,7 +19,7 @@ namespace SmartTeethCare.API.DTOs
 
         public string Address { get; set; }
 
-        public string Role { get; set; }
+        public string Role { get; set; } = "Patient";
 
         public String Gender { get; set; }
 

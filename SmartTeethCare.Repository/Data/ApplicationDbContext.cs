@@ -28,6 +28,7 @@ public class ApplicationDbContext : IdentityDbContext<User>
     public DbSet<EducationalVideos> EducationalVideos { get; set; }
     public DbSet<Admin> Admins { get; set; }
     public DbSet<IdentityRole> Roles { get; set; }
+	public DbSet<MedicalHistory> MedicalHistories { get; set; }
 
 
 
