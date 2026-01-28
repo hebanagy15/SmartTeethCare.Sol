@@ -15,11 +15,12 @@ namespace SmartTeethCare.Core.Entities
 
         public string UserId { get; set; }
         public User User { get; set; }
-        public ICollection<Prescription> Prescriptions { get; set; }
+        public ICollection<Prescription> Prescriptions { get; set; } = new List<Prescription>();
         public ICollection<DentistQualifications> DentistQualifications { get; set; }
-        public ICollection<Review>? Reviews { get; set; }
+        public ICollection<Review> Reviews { get; set; } = new List<Review>();
+        public ICollection<MedicalHistory> MedicalHistories { get; set; } = new List<MedicalHistory>();
 
-        
+
         public int? SpecialtyID { get; set; }
 
         [ForeignKey(nameof(SpecialtyID))]

@@ -74,14 +74,16 @@ namespace SmartTeethCare.API
 
             builder.Services.AddScoped(typeof(IAuthService), typeof(AuthService));
             builder.Services.AddScoped<IPatientAppointmentService, PatientAppointmentService>();
-            
+            builder.Services.AddScoped<IPatientMedicalHistoryService, PatientMedicalHistoryService>();
+
+
             //builder.Services.AddControllers()
             //       .AddApplicationPart(typeof(PatientAppointmentController).Assembly);
 
 
 
 
-           
+
             builder.Services.AddAuthentication("Bearer")
            .AddJwtBearer("Bearer", options =>
            {

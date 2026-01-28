@@ -1,4 +1,5 @@
-﻿using SmartTeethCare.Core.Entities;
+﻿using Microsoft.EntityFrameworkCore.Query;
+using SmartTeethCare.Core.Entities;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -17,7 +18,7 @@ namespace SmartTeethCare.Core.Interfaces.Repositories
         Task DeleteAsync(T entity);
 
         Task<bool> AnyAsync(Expression<Func<T, bool>> predicate);
-        Task<IEnumerable<T>> FindAsync(Expression<Func<T, bool>> predicate);
+        Task<List<T>> FindAsync(Expression<Func<T, bool>> predicate = null, Func<IQueryable<T>, IIncludableQueryable<T, object>> include = null);
 
     }
 }

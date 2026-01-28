@@ -11,6 +11,9 @@ namespace SmartTeethCare.Core.Entities
         public int PatientId { get; set; }
         public Patient Patient { get; set; }
 
+        public int DoctorId { get; set; }
+        public Doctor Doctor { get; set; }
+
         public string ConditionName { get; set; }   // Diabetes, Hypertension, Heart Disease
         public string? Notes { get; set; }           // any extra details
         public bool IsChronic { get; set; }           

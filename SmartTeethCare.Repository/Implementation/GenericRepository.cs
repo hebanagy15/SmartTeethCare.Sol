@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Query;
 using SmartTeethCare.Core.Entities;
 using SmartTeethCare.Core.Interfaces.Repositories;
 using SmartTeethCare.Repository.Data;
@@ -46,10 +47,19 @@ namespace SmartTeethCare.Repository.Implementation
         {
             return await _dbContext.Set<T>().AnyAsync(predicate);
         }
-        public async Task<IEnumerable<T>> FindAsync(Expression<Func<T, bool>> predicate)
+        public async Task<List<T>> FindAsync(Expression<Func<T, bool>> predicate = null,Func<IQueryable<T>, IIncludableQueryable<T, object>> include = null)
         {
-            return await _dbContext.Set<T>().Where(predicate).ToListAsync();
+            IQueryable<T> query = _dbContext.Set<T>();
+
+            if (predicate != null)
+                query = query.Where(predicate);
+
+            if (include != null)
+                query = include(query);
+
+            return await query.ToListAsync();
         }
+
 
     }
 }
