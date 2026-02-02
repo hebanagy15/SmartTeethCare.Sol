@@ -19,5 +19,7 @@ namespace SmartTeethCare.Core.Entities
         public string PaymentStatus { get; set; }
         public Doctor doctor { get; set; }
         public Patient patient { get; set; }
+        public Prescription Prescription { get; set; }
+
     }
 }
