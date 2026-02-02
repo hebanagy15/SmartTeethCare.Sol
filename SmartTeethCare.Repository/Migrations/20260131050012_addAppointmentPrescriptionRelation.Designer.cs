@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using SmartTeethCare.Repository.Data;
 
@@ -11,9 +12,11 @@ using SmartTeethCare.Repository.Data;
 namespace SmartTeethCare.Repository.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260131050012_addAppointmentPrescriptionRelation")]
+    partial class addAppointmentPrescriptionRelation
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -210,8 +213,9 @@ namespace SmartTeethCare.Repository.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<int>("Status")
-                        .HasColumnType("int");
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id");
 
@@ -464,6 +468,9 @@ namespace SmartTeethCare.Repository.Migrations
                         .HasColumnType("int");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("AppointmentId")
+                        .IsUnique();
 
                     b.HasIndex("DoctorId");
 
@@ -799,6 +806,12 @@ namespace SmartTeethCare.Repository.Migrations
 
             modelBuilder.Entity("SmartTeethCare.Core.Entities.Prescription", b =>
                 {
+                    b.HasOne("SmartTeethCare.Core.Entities.Appointment", "Appointment")
+                        .WithOne("Prescription")
+                        .HasForeignKey("SmartTeethCare.Core.Entities.Prescription", "AppointmentId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
                     b.HasOne("SmartTeethCare.Core.Entities.Doctor", "doctor")
                         .WithMany("Prescriptions")
                         .HasForeignKey("DoctorId")
@@ -854,6 +867,12 @@ namespace SmartTeethCare.Repository.Migrations
                     b.Navigation("Patient");
 
                     b.Navigation("doctor");
+                });
+
+            modelBuilder.Entity("SmartTeethCare.Core.Entities.Appointment", b =>
+                {
+                    b.Navigation("Prescription")
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("SmartTeethCare.Core.Entities.Doctor", b =>

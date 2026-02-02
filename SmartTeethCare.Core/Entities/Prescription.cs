@@ -21,5 +21,6 @@ namespace SmartTeethCare.Core.Entities
         public Patient Patient { get; set; }
 
         public ICollection<PrescriptionMedicine> PrescriptionMedicines { get; set; }
+
     }
 }

@@ -23,9 +23,18 @@ namespace SmartTeethCare.Service.PatientModule
         public async Task BookAppointment(BookAppointmentDto dto, ClaimsPrincipal user)
         {
             // user = Token
-            var patientId = int.Parse(
-                user.FindFirst(ClaimTypes.NameIdentifier)!.Value
-            );
+            var userId = user.FindFirst(ClaimTypes.NameIdentifier)!.Value;
+
+            var patients = await _uow.Repository<Patient>()
+                .FindAsync(p => p.UserId == userId);
+
+            var patient = patients.FirstOrDefault();
+
+            if (patient == null)
+                throw new Exception("Patient not found");
+
+            var patientId = patient.Id;
+
             // Avoid Duplication
             var isAlreadyBooked = await _uow.Repository<Appointment>()
             .AnyAsync(a => a.PatientID == patientId && a.DoctorID == dto.DentistId && a.Date == dto.AppointmentDate);
@@ -45,14 +54,25 @@ namespace SmartTeethCare.Service.PatientModule
             {
                 PatientID = patientId,
                 DoctorID = dto.DentistId,
+                Amount = 300,
                 Date = dto.AppointmentDate,
                 Status = "Pending",
+                PaymentMethod = "Cash",
+                PaymentStatus = "Unpaid",
                 CreatedAt = DateTime.UtcNow
             };
 
             
             await _uow.Repository<Appointment>().AddAsync(appointment);
-            await _uow.CompleteAsync();
+            try
+            {
+                await _uow.CompleteAsync();
+            }
+            catch (Exception ex)
+            {
+                throw new Exception(ex.InnerException?.Message ?? ex.Message);
+            }
+
 
         }
 

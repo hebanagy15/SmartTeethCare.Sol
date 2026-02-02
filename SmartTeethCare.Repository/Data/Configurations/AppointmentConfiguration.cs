@@ -1,6 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using SmartTeethCare.Core.Entities;
+using System.Reflection.Emit;
 
 namespace SmartTeethCare.Repository.Configurations
 {
@@ -17,12 +18,17 @@ namespace SmartTeethCare.Repository.Configurations
             builder.HasOne(a => a.doctor)
                    .WithMany(d => d.Appointments)
                    .HasForeignKey(a => a.DoctorID)
-                   .OnDelete(DeleteBehavior.Cascade);
+                   .OnDelete(DeleteBehavior.Restrict);
 
             // Relationship with Patient (1:N)
             builder.HasOne(a => a.patient)
                    .WithMany(p => p.Appointments)
                    .HasForeignKey(a => a.PatientID)
+                   .OnDelete(DeleteBehavior.Restrict);
+
+            builder.HasOne(a => a.Prescription)
+                   .WithOne(p => p.Appointment)
+                   .HasForeignKey<Prescription>(p => p.AppointmentId)
                    .OnDelete(DeleteBehavior.Cascade);
 
             //  Relationship with Prescriptions (1:N)
