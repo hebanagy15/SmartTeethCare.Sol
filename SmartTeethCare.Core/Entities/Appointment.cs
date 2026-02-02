@@ -15,7 +15,7 @@ namespace SmartTeethCare.Core.Entities
 
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         public string Status { get; set; }
-        public string PaymentMethod { get; set; }
+        public string PaymentMethod { get; set; } 
         public string PaymentStatus { get; set; }
         public Doctor doctor { get; set; }
         public Patient patient { get; set; }

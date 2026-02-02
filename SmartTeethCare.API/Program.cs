@@ -1,4 +1,5 @@
 
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -84,7 +85,11 @@ namespace SmartTeethCare.API
 
 
 
-            builder.Services.AddAuthentication("Bearer")
+            builder.Services.AddAuthentication(options =>
+            {
+                options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+                options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+            })
            .AddJwtBearer("Bearer", options =>
            {
                   options.TokenValidationParameters = new TokenValidationParameters
