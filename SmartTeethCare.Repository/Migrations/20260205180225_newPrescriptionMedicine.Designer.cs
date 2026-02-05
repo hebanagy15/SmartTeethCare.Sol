@@ -12,8 +12,8 @@ using SmartTeethCare.Repository.Data;
 namespace SmartTeethCare.Repository.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20260131050012_addAppointmentPrescriptionRelation")]
-    partial class addAppointmentPrescriptionRelation
+    [Migration("20260205180225_newPrescriptionMedicine")]
+    partial class newPrescriptionMedicine
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -213,9 +213,8 @@ namespace SmartTeethCare.Repository.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("Status")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
 
                     b.HasKey("Id");
 
@@ -469,8 +468,7 @@ namespace SmartTeethCare.Repository.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("AppointmentId")
-                        .IsUnique();
+                    b.HasIndex("AppointmentId");
 
                     b.HasIndex("DoctorId");
 
@@ -485,6 +483,23 @@ namespace SmartTeethCare.Repository.Migrations
                         .HasColumnType("int");
 
                     b.Property<int>("MedicineID")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Dosage")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("DurationInDays")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Frequency")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("Id")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Quantity")
                         .HasColumnType("int");
 
                     b.HasKey("PrescriptionID", "MedicineID");
@@ -807,9 +822,9 @@ namespace SmartTeethCare.Repository.Migrations
             modelBuilder.Entity("SmartTeethCare.Core.Entities.Prescription", b =>
                 {
                     b.HasOne("SmartTeethCare.Core.Entities.Appointment", "Appointment")
-                        .WithOne("Prescription")
-                        .HasForeignKey("SmartTeethCare.Core.Entities.Prescription", "AppointmentId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .WithMany("Prescriptions")
+                        .HasForeignKey("AppointmentId")
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.HasOne("SmartTeethCare.Core.Entities.Doctor", "doctor")
@@ -871,8 +886,7 @@ namespace SmartTeethCare.Repository.Migrations
 
             modelBuilder.Entity("SmartTeethCare.Core.Entities.Appointment", b =>
                 {
-                    b.Navigation("Prescription")
-                        .IsRequired();
+                    b.Navigation("Prescriptions");
                 });
 
             modelBuilder.Entity("SmartTeethCare.Core.Entities.Doctor", b =>

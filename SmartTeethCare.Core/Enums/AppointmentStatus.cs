@@ -11,6 +11,7 @@ namespace SmartTeethCare.Core.Enums
         Pending,
         Approved,
         Rejected,
-        Completed
+        Completed,
+        Cancelled
     }
 }
