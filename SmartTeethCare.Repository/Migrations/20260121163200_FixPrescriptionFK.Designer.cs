@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using SmartTeethCare.Repository.Data;
 
@@ -11,9 +12,11 @@ using SmartTeethCare.Repository.Data;
 namespace SmartTeethCare.Repository.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260121163200_FixPrescriptionFK")]
+    partial class FixPrescriptionFK
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -190,9 +193,6 @@ namespace SmartTeethCare.Repository.Migrations
                     b.Property<int>("Amount")
                         .HasColumnType("int");
 
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
-
                     b.Property<DateTime>("Date")
                         .HasColumnType("datetime2");
 
@@ -295,42 +295,6 @@ namespace SmartTeethCare.Repository.Migrations
                     b.HasIndex("SpecialtyID");
 
                     b.ToTable("EducationalVideos", (string)null);
-                });
-
-            modelBuilder.Entity("SmartTeethCare.Core.Entities.MedicalHistory", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("ConditionName")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int>("DoctorId")
-                        .HasColumnType("int");
-
-                    b.Property<bool>("IsChronic")
-                        .HasColumnType("bit");
-
-                    b.Property<string>("Notes")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<int>("PatientId")
-                        .HasColumnType("int");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("DoctorId");
-
-                    b.HasIndex("PatientId");
-
-                    b.ToTable("MedicalHistories");
                 });
 
             modelBuilder.Entity("SmartTeethCare.Core.Entities.Medicine", b =>
@@ -480,27 +444,6 @@ namespace SmartTeethCare.Repository.Migrations
                         .HasColumnType("int");
 
                     b.Property<int>("MedicineID")
-                        .HasColumnType("int");
-
-                    b.Property<string>("Dosage")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<int>("DurationInDays")
-                        .HasColumnType("int");
-
-                    b.Property<string>("Frequency")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<int>("Id")
-                        .HasColumnType("int");
-
-                    b.Property<string>("Instructions")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<int>("Quantity")
                         .HasColumnType("int");
 
                     b.HasKey("PrescriptionID", "MedicineID");
@@ -771,25 +714,6 @@ namespace SmartTeethCare.Repository.Migrations
                     b.Navigation("Speciality");
                 });
 
-            modelBuilder.Entity("SmartTeethCare.Core.Entities.MedicalHistory", b =>
-                {
-                    b.HasOne("SmartTeethCare.Core.Entities.Doctor", "Doctor")
-                        .WithMany("MedicalHistories")
-                        .HasForeignKey("DoctorId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("SmartTeethCare.Core.Entities.Patient", "Patient")
-                        .WithMany("MedicalHistories")
-                        .HasForeignKey("PatientId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Doctor");
-
-                    b.Navigation("Patient");
-                });
-
             modelBuilder.Entity("SmartTeethCare.Core.Entities.Patient", b =>
                 {
                     b.HasOne("SmartTeethCare.Core.Entities.User", "User")
@@ -896,8 +820,6 @@ namespace SmartTeethCare.Repository.Migrations
 
                     b.Navigation("DentistQualifications");
 
-                    b.Navigation("MedicalHistories");
-
                     b.Navigation("Prescriptions");
 
                     b.Navigation("Reviews");
@@ -913,8 +835,6 @@ namespace SmartTeethCare.Repository.Migrations
             modelBuilder.Entity("SmartTeethCare.Core.Entities.Patient", b =>
                 {
                     b.Navigation("Appointments");
-
-                    b.Navigation("MedicalHistories");
 
                     b.Navigation("Prescriptions");
 

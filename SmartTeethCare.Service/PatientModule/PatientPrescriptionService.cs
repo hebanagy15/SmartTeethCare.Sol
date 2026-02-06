@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using SmartTeethCare.Core.DTOs.DoctorModule;
 using SmartTeethCare.Core.DTOs.PatientModule;
 using SmartTeethCare.Core.Entities;
 using SmartTeethCare.Core.Interfaces.Services.PatientModule;
@@ -8,7 +9,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Security.Claims;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace SmartTeethCare.Service.PatientModule
@@ -23,20 +23,20 @@ namespace SmartTeethCare.Service.PatientModule
             _uow = uow;
             _userManager = userManager;
         }
+
+        // Get all prescriptions for the logged-in patient
         public async Task<List<PrescriptionDetailsDTO>> GetMyPrescriptionsAsync(ClaimsPrincipal user)
         {
             var patientId = int.Parse(user.FindFirstValue(ClaimTypes.NameIdentifier));
 
-            var prescriptionRepo = _uow.Repository<Prescription>();
-
-            var prescriptions = await prescriptionRepo.FindAsync(
-                p => p.PatientId == patientId,
-                q => q.Include(p => p.doctor)
-                      .ThenInclude(d => d.User)
-                      .Include(p => p.Patient)
-                      .Include(p => p.PrescriptionMedicines)
-                      .ThenInclude(pm => pm.Medicine)
-            );
+            var prescriptions = await _uow.Repository<Prescription>()
+                .FindAsync(
+                    p => p.PatientId == patientId,
+                    q => q
+                        .Include(p => p.doctor).ThenInclude(d => d.User)
+                        .Include(p => p.Patient).ThenInclude(p => p.User)
+                        .Include(p => p.PrescriptionMedicines).ThenInclude(pm => pm.Medicine)
+                );
 
             return prescriptions.Select(p => new PrescriptionDetailsDTO
             {
@@ -45,25 +45,32 @@ namespace SmartTeethCare.Service.PatientModule
                 DoctorName = p.doctor?.User?.UserName ?? "Unknown Doctor",
                 PatientName = p.Patient?.User?.UserName ?? "Unknown Patient",
                 Medicines = p.PrescriptionMedicines
-                    .Select(pm => pm.Medicine.Name)
-                    .ToList(),
-
+                    .Select(pm => new PrescriptionMedicineDetailsDto
+                    {
+                        MedicineName = pm.Medicine?.Name ?? "",
+                        Dosage = pm.Dosage,
+                        Frequency = pm.Frequency,
+                        DurationInDays = pm.DurationInDays,
+                        Quantity = pm.Quantity,
+                        Instructions = pm.Instructions
+                    })
+                    .ToList()
             }).ToList();
         }
 
+        // Get a single prescription by appointment for the logged-in patient
         public async Task<PrescriptionDetailsDTO> GetByAppointmentAsync(int appointmentId, ClaimsPrincipal user)
         {
             var patientId = int.Parse(user.FindFirstValue(ClaimTypes.NameIdentifier));
 
-            var prescriptionRepo = _uow.Repository<Prescription>();
-
-            var prescription = (await prescriptionRepo.FindAsync(
-                p => p.AppointmentId == appointmentId,
-                q => q.Include(p => p.doctor)
-                      .ThenInclude(d => d.User)
-                      .Include(p => p.PrescriptionMedicines)
-                      .ThenInclude(pm => pm.Medicine)
-            )).FirstOrDefault();
+            var prescription = (await _uow.Repository<Prescription>()
+                .FindAsync(
+                    p => p.AppointmentId == appointmentId,
+                    q => q
+                        .Include(p => p.doctor).ThenInclude(d => d.User)
+                        .Include(p => p.Patient).ThenInclude(p => p.User)
+                        .Include(p => p.PrescriptionMedicines).ThenInclude(pm => pm.Medicine)
+                )).FirstOrDefault();
 
             if (prescription == null || prescription.PatientId != patientId)
                 throw new UnauthorizedAccessException();
@@ -72,13 +79,20 @@ namespace SmartTeethCare.Service.PatientModule
             {
                 PrescriptionId = prescription.Id,
                 Date = prescription.Date,
-                DoctorName = prescription.doctor.User.UserName,
+                DoctorName = prescription.doctor?.User?.UserName ?? "Unknown Doctor",
+                PatientName = prescription.Patient?.User?.UserName ?? "Unknown Patient",
                 Medicines = prescription.PrescriptionMedicines
-                    .Select(pm => pm.Medicine.Name)
+                    .Select(pm => new PrescriptionMedicineDetailsDto
+                    {
+                        MedicineName = pm.Medicine?.Name ?? "",
+                        Dosage = pm.Dosage,
+                        Frequency = pm.Frequency,
+                        DurationInDays = pm.DurationInDays,
+                        Quantity = pm.Quantity,
+                        Instructions = pm.Instructions
+                    })
                     .ToList()
             };
         }
-
-
     }
 }

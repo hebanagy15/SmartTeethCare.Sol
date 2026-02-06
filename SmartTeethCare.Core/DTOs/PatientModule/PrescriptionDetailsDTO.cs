@@ -1,4 +1,5 @@
-﻿using System;
+﻿using SmartTeethCare.Core.DTOs.DoctorModule;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -14,7 +15,7 @@ namespace SmartTeethCare.Core.DTOs.PatientModule
         public string DoctorName { get; set; }
         public string PatientName { get; set; }
 
-        public List<string> Medicines { get; set; } = new();
+        public List<PrescriptionMedicineDetailsDto> Medicines { get; set; } = new();
     }
 
 }
