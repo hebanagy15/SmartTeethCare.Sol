@@ -6,6 +6,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using SmartTeethCare.API.Errors;
+using SmartTeethCare.API.Middlewares;
 using SmartTeethCare.Core.Entities;
 using SmartTeethCare.Core.Interfaces.Repositories;
 using SmartTeethCare.Core.Interfaces.Services;
@@ -134,13 +135,15 @@ namespace SmartTeethCare.API
 
             var app = builder.Build();
 
+            app.UseMiddleware<ExceptionMiddleware>();
+
             // Configure the HTTP request pipeline.
             if (app.Environment.IsDevelopment())
             {
                 app.UseSwagger();
                 app.UseSwaggerUI();
             }
-
+            app.UseStatusCodePagesWithRedirects("/errors/{0}"); // Handle Status Codes (404)
             app.UseHttpsRedirection();
             app.UseAuthentication();
             app.UseAuthorization();
