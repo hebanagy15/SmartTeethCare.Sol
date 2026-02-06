@@ -1,9 +1,11 @@
 
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
+using SmartTeethCare.API.Errors;
 using SmartTeethCare.Core.Entities;
 using SmartTeethCare.Core.Interfaces.Repositories;
 using SmartTeethCare.Core.Interfaces.Services;
@@ -108,7 +110,21 @@ namespace SmartTeethCare.API
     });
 
             builder.Services.AddAuthorization();
-
+            builder.Services.Configure<ApiBehaviorOptions>(options =>
+            {
+                options.InvalidModelStateResponseFactory = actionContext =>
+                {
+                    var errors = actionContext.ModelState
+                    .Where(e => e.Value.Errors.Count > 0)
+                    .SelectMany(x => x.Value.Errors)
+                    .Select(x => x.ErrorMessage).ToArray();
+                    var errorResponse = new ApiValidationErrorResponse
+                    {
+                        Errors = errors
+                    };
+                    return new BadRequestObjectResult(errorResponse);
+                };
+            });
 
             var app = builder.Build();
 
