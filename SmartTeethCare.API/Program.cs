@@ -138,11 +138,17 @@ namespace SmartTeethCare.API
             app.UseMiddleware<ExceptionMiddleware>();
 
             // Configure the HTTP request pipeline.
-            if (app.Environment.IsDevelopment())
+            app.UseSwagger();
+            app.UseSwaggerUI(c =>
             {
-                app.UseSwagger();
-                app.UseSwaggerUI();
-            }
+                c.SwaggerEndpoint("/swagger/v1/swagger.json", "SmartTeethCare API V1");
+            });
+
+            //if (app.Environment.IsDevelopment())
+            //{
+            //    app.UseSwagger();
+            //    app.UseSwaggerUI();
+            //}
             app.UseStatusCodePagesWithRedirects("/errors/{0}"); // Handle Status Codes (404)
             app.UseHttpsRedirection();
             app.UseAuthentication();
