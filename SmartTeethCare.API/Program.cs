@@ -10,15 +10,18 @@ using SmartTeethCare.API.Middlewares;
 using SmartTeethCare.Core.Entities;
 using SmartTeethCare.Core.Interfaces.Repositories;
 using SmartTeethCare.Core.Interfaces.Services;
+using SmartTeethCare.Core.Interfaces.Services.AdminModule;
 using SmartTeethCare.Core.Interfaces.Services.DoctorModule;
 using SmartTeethCare.Core.Interfaces.Services.PatientModule;
 using SmartTeethCare.Core.Interfaces.UnitOfWork;
 using SmartTeethCare.Repository.Data;
 using SmartTeethCare.Repository.Implementation;
 using SmartTeethCare.Service;
+using SmartTeethCare.Service.AdminModule;
 using SmartTeethCare.Service.DoctorModule;
 using SmartTeethCare.Service.Implementation;
 using SmartTeethCare.Service.PatientModule;
+using SmartTeethCare.Services.AppointmentModule;
 using SmartTeethCare.Web.Areas.Patient.Controllers;
 using System.Text;
 
@@ -82,6 +85,9 @@ namespace SmartTeethCare.API
             builder.Services.AddScoped(typeof(IAuthService), typeof(AuthService));
             builder.Services.AddScoped<IPatientAppointmentService, PatientAppointmentService>();
             builder.Services.AddScoped<IPatientMedicalHistoryService, PatientMedicalHistoryService>();
+            builder.Services.AddScoped<IPatientPrescriptionService, PatientPrescriptionService>();
+            builder.Services.AddScoped<IAdminPatientService, AdminPatientService>();
+            builder.Services.AddScoped<IAdminAppointmentService, AdminAppointmentService>();
             builder.Services.AddScoped<IPrescriptionService, PrescriptionService>();
             builder.Services.AddScoped<IDoctorAppointmentService, DoctorAppointmentService>();
 
