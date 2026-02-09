@@ -23,7 +23,7 @@ namespace SmartTeethCare.Service.PatientModule
 
         public async Task BookAppointment(BookAppointmentDto dto, ClaimsPrincipal user)
         {
-            var userId = user.FindFirst(ClaimTypes.NameIdentifier)!.Value;
+            var userId = user.FindFirstValue(ClaimTypes.NameIdentifier) ?? throw new Exception("User not authenticated");
 
             var patients = await _uow.Repository<Patient>()
                 .FindAsync(p => p.UserId == userId);
@@ -58,8 +58,8 @@ namespace SmartTeethCare.Service.PatientModule
                 Amount = 300,
                 Date = dto.AppointmentDate,
                 Status = AppointmentStatus.Pending,   
-                PaymentMethod = "Cash",
-                PaymentStatus = "Unpaid",
+                PaymentMethod = AppointmentPaymentMethod.Cash,
+                PaymentStatus = AppointmentPaymentStatus.Unpaid,
                 CreatedAt = DateTime.UtcNow
             };
 
@@ -77,37 +77,80 @@ namespace SmartTeethCare.Service.PatientModule
 
         public async Task CancelAppointment(int appointmentId, ClaimsPrincipal user)
         {
-            var patientId = int.Parse(user.FindFirstValue(ClaimTypes.NameIdentifier));
+            var userId = user.FindFirstValue(ClaimTypes.NameIdentifier)?? throw new Exception("User not authenticated");
 
-            var appointments = await _uow.Repository<Appointment>().GetAllAsync();
-            var target = appointments.FirstOrDefault(a => a.Id == appointmentId && a.PatientID == patientId);
+            var patients = await _uow.Repository<Patient>()
+                .FindAsync(p => p.UserId == userId);
+
+            var patient = patients.FirstOrDefault();
+            if (patient == null)
+                throw new Exception("Patient not found");
+
+            var patientId = patient.Id;
+
+            var target = (await _uow.Repository<Appointment>()
+                .FindAsync(a => a.Id == appointmentId && a.PatientID == patientId))
+                .FirstOrDefault();
+
 
             if (target == null)
                 throw new Exception("Appointment not found or not yours.");
+
+            if (target.Status != AppointmentStatus.Pending && target.Status != AppointmentStatus.Approved)
+            {
+                throw new Exception("Only pending or approved appointments can be cancelled.");
+            }
 
             if (target.Date <= DateTime.Now.AddHours(1))
                 throw new Exception("Cannot cancel appointment less than 1 hour before it starts.");
 
             target.Status = AppointmentStatus.Cancelled; 
-            _uow.Repository<Appointment>().UpdateAsync(target);
+            await _uow.Repository<Appointment>().UpdateAsync(target);
             await _uow.CompleteAsync();
         }
 
         public async Task<List<Appointment>> GetMyAppointments(ClaimsPrincipal user)
         {
-            var patientId = int.Parse(user.FindFirstValue(ClaimTypes.NameIdentifier));
+            var userId = user.FindFirstValue(ClaimTypes.NameIdentifier) ?? throw new Exception("User not authenticated");
+
+            var patients = await _uow.Repository<Patient>()
+                .FindAsync(p => p.UserId == userId);
+
+            var patient = patients.FirstOrDefault();
+            if (patient == null)
+                throw new Exception("Patient not found");
+
+            var patientId = patient.Id;
 
             var appointments = await _uow.Repository<Appointment>()
                 .FindAsync(a => a.PatientID == patientId);
 
+            var egyptTimeZone = TimeZoneInfo.FindSystemTimeZoneById("Egypt Standard Time");
+
             return appointments
                 .OrderBy(a => a.Date)
+                .Select(a =>
+                {
+                    a.Date = TimeZoneInfo.ConvertTimeFromUtc(a.Date, egyptTimeZone);
+                    a.CreatedAt = TimeZoneInfo.ConvertTimeFromUtc(a.CreatedAt, egyptTimeZone); // هنا زدنا CreatedAt
+                    return a;
+                })
                 .ToList();
+
         }
 
         public async Task<AppointmentDetailsDTO> GetAppointmentDetails(int appointmentId, ClaimsPrincipal user)
         {
-            var patientId = int.Parse(user.FindFirstValue(ClaimTypes.NameIdentifier));
+            var userId = user.FindFirstValue(ClaimTypes.NameIdentifier) ?? throw new Exception("User not authenticated");
+
+            var patients = await _uow.Repository<Patient>()
+                .FindAsync(p => p.UserId == userId);
+
+            var _patient = patients.FirstOrDefault();
+            if (_patient == null)
+                throw new Exception("Patient not found");
+
+            var patientId = _patient.Id;
 
             var appointment = (await _uow.Repository<Appointment>()
                 .FindAsync(a => a.Id == appointmentId))
@@ -129,12 +172,13 @@ namespace SmartTeethCare.Service.PatientModule
             {
                 Id = appointment.Id,
                 DoctorId = appointment.DoctorID,
-                DoctorName = doctorName,
+                DoctorName = doctorUser?.UserName ?? "Unknown",
                 PatientId = appointment.PatientID,
-                PatientName = patientName,
+                PatientName = patientUser?.UserName ?? "Unknown",
                 Date = appointment.Date,
                 Status = appointment.Status.ToString(), 
-                Amount = appointment.Amount
+                Amount = appointment.Amount,
+                CreatedAt = appointment.CreatedAt
             };
 
             return dto;
