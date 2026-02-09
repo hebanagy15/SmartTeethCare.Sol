@@ -87,13 +87,6 @@ namespace SmartTeethCare.API
 
 
 
-            //builder.Services.AddControllers()
-            //       .AddApplicationPart(typeof(PatientAppointmentController).Assembly);
-
-
-
-
-
             builder.Services.AddAuthentication(options =>
             {
                 options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
@@ -144,11 +137,6 @@ namespace SmartTeethCare.API
                 c.SwaggerEndpoint("/swagger/v1/swagger.json", "SmartTeethCare API V1");
             });
 
-            //if (app.Environment.IsDevelopment())
-            //{
-            //    app.UseSwagger();
-            //    app.UseSwaggerUI();
-            //}
             app.UseStatusCodePagesWithRedirects("/errors/{0}"); // Handle Status Codes (404)
             app.UseHttpsRedirection();
             app.UseAuthentication();
@@ -157,22 +145,22 @@ namespace SmartTeethCare.API
 
             app.MapControllers();
 
-            //using (var scope = app.Services.CreateScope())
-            //{
-            //    var services = scope.ServiceProvider;
-            //    try
-            //    {
-            //        var db = services.GetRequiredService<ApplicationDbContext>();
-            //        db.Database.Migrate(); 
-            //        await SmartTeethCare.Repository.DataSeed.SeedUsers.SeedAsync(services); 
-            //    }
-            //    catch (Exception ex)
-            //    {
-            //        var logger = services.GetRequiredService<ILogger<Program>>();
-            //        logger.LogError(ex, "An error occurred while migrating or seeding the database.");
-            //        throw;
-            //    }
-            //}
+            using (var scope = app.Services.CreateScope())
+            {
+                var services = scope.ServiceProvider;
+                try
+                {
+                    var db = services.GetRequiredService<ApplicationDbContext>();
+                    db.Database.Migrate();
+                    await SmartTeethCare.Repository.DataSeed.SeedUsers.SeedAsync(services);
+                }
+                catch (Exception ex)
+                {
+                    var logger = services.GetRequiredService<ILogger<Program>>();
+                    logger.LogError(ex, "An error occurred while migrating or seeding the database.");
+                    throw;
+                }
+            }
 
             app.Run();
         }
