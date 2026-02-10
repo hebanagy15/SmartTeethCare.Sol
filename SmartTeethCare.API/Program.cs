@@ -36,6 +36,24 @@ namespace SmartTeethCare.API
             // Add services to the container.
 
             builder.Services.AddControllers();
+
+            // CORS (Deployment)
+            builder.Services.AddCors(options =>
+            {
+                options.AddPolicy("AllowFrontend", policy =>
+                {
+                    policy
+                        .WithOrigins(
+                            "http://localhost:8081"         // menna
+                            
+                        // áãÇ ÇáÝÑæäÊ íÊÚãáå deploy ÖíÝí ÇáÏæãíä åäÇ
+                        // "https://smart-teeth-care.vercel.app"
+                        )
+                        .AllowAnyHeader()
+                        .AllowAnyMethod();
+                });
+            });
+
             // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen(c =>
@@ -145,6 +163,9 @@ namespace SmartTeethCare.API
 
             app.UseStatusCodePagesWithRedirects("/errors/{0}"); // Handle Status Codes (404)
             app.UseHttpsRedirection();
+            app.UseRouting();          
+
+            app.UseCors("AllowFrontend"); // CORS
             app.UseAuthentication();
             app.UseAuthorization();
 
