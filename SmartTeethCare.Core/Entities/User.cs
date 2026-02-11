@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Identity;
+using System.ComponentModel.DataAnnotations.Schema;
 namespace SmartTeethCare.Core.Entities
 {
     public class User : IdentityUser
@@ -7,6 +8,7 @@ namespace SmartTeethCare.Core.Entities
 
         public string Gender { get; set; }
 
+        [NotMapped]
         public string Password { get; set; }
         public DateTime DateOfBirth { get; set; }
         public DateTime CreatedAt { get; set; } = DateTime.Now;

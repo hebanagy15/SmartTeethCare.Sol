@@ -32,7 +32,7 @@ namespace SmartTeethCare.Web.Areas.Patient.Controllers
             }
         }
 
-        [HttpDelete(nameof(CancelAppointment) + "/{appointmentId}")]
+        [HttpPatch("CancelAppointment/{appointmentId}")]
         public async Task<IActionResult> CancelAppointment(int appointmentId)
         {
             try
@@ -60,7 +60,7 @@ namespace SmartTeethCare.Web.Areas.Patient.Controllers
             }
         }
 
-        [HttpGet("{appointmentId}/details")]
+        [HttpGet("GetAppointmentDetails/{appointmentId}")]
         public async Task<IActionResult> GetAppointmentDetails(int appointmentId)
         {
             var result = await _appointmentService

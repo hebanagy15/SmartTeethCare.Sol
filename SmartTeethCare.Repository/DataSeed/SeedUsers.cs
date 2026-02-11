@@ -1,5 +1,5 @@
-﻿
-using Microsoft.AspNetCore.Identity;
+﻿using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using SmartTeethCare.Core.Entities;
@@ -9,6 +9,13 @@ using System.Threading.Tasks;
 
 namespace SmartTeethCare.Repository.DataSeed
 {
+    public static class AppRoles
+    {
+        public const string Admin = "Admin";
+        public const string Doctor = "Doctor";
+        public const string Patient = "Patient";
+    }
+
     public static class SeedUsers
     {
         public static async Task SeedAsync(IServiceProvider serviceProvider)
@@ -20,8 +27,8 @@ namespace SmartTeethCare.Repository.DataSeed
             var roleManager = serviceProvider.GetRequiredService<RoleManager<IdentityRole>>();
             var dbContext = serviceProvider.GetRequiredService<ApplicationDbContext>();
 
-            
-            var roles = new[] { "Admin", "User", "Doctor", "Patient" };
+            // ---- 1️⃣ Seed Roles ----
+            string[] roles = { AppRoles.Admin, AppRoles.Doctor, AppRoles.Patient };
             foreach (var role in roles)
             {
                 if (!await roleManager.RoleExistsAsync(role))
@@ -35,7 +42,7 @@ namespace SmartTeethCare.Repository.DataSeed
                 }
             }
 
-            // ---- Admin ----
+            // ---- 2️⃣ Seed Admin ----
             var adminEmail = "admin@site.test";
             var admin = await userManager.FindByEmailAsync(adminEmail);
             if (admin == null)
@@ -48,23 +55,24 @@ namespace SmartTeethCare.Repository.DataSeed
                     Address = "Admin address",
                     Gender = "NotSpecified",
                     DateOfBirth = DateTime.Parse("1990-01-01"),
-                    CreatedAt = DateTime.UtcNow,
-                    UpdatedAt = DateTime.UtcNow
+                    CreatedAt = DateTime.Now,
+                    UpdatedAt = DateTime.Now
                 };
 
-                var createAdmin = await userManager.CreateAsync(admin, "P@ssw0rd!1"); // dev-only
+                var createAdmin = await userManager.CreateAsync(admin, "P@ssw0rd!1"); // DEV ONLY
                 if (createAdmin.Succeeded)
                 {
-                    await userManager.AddToRoleAsync(admin, "Admin");
+                    await userManager.AddToRoleAsync(admin, AppRoles.Admin);
                     logger?.LogInformation("Admin user created: {Email}", adminEmail);
                 }
                 else
                 {
-                    foreach (var err in createAdmin.Errors) logger?.LogError(err.Description);
+                    foreach (var err in createAdmin.Errors)
+                        logger?.LogError(err.Description);
                 }
             }
 
-            // ---- Doctor user + domain Doctor entity ----
+            // ---- 3️⃣ Seed Doctor ----
             var doctorEmail = "doctor@test.com";
             var doctorUser = await userManager.FindByEmailAsync(doctorEmail);
             if (doctorUser == null)
@@ -77,39 +85,42 @@ namespace SmartTeethCare.Repository.DataSeed
                     Address = "Cairo, Egypt",
                     Gender = "Male",
                     DateOfBirth = DateTime.Parse("1985-05-10"),
-                    CreatedAt = DateTime.UtcNow,
-                    UpdatedAt = DateTime.UtcNow
+                    CreatedAt = DateTime.Now,
+                    UpdatedAt = DateTime.Now
                 };
 
                 var createDoc = await userManager.CreateAsync(doctorUser, "Doctor@123");
                 if (createDoc.Succeeded)
                 {
-                    await userManager.AddToRoleAsync(doctorUser, "Doctor");
+                    await userManager.AddToRoleAsync(doctorUser, AppRoles.Doctor);
                     logger?.LogInformation("Doctor user created: {Email}", doctorEmail);
 
-                    // لو مافيش Doctor entity المرتبط بالـ User، نعمله
-                    var existingDoctor = await dbContext.Doctors.FindAsync(doctorUser.Id);
-                    // هنا نفترض إن Doctor.Id هو رقم و Doctor.UserId هو string user id
-                    var doctorEntity = new Doctor
-                    {
-                        Salary = 10000,
-                        WorkingHours = 40,
-                        HiringDate = DateTime.UtcNow.Date,
-                        UserId = doctorUser.Id,
-                        
-                    };
+                    // Create Doctor entity if not exists
+                    var existingDoctor = await dbContext.Doctors
+                        .FirstOrDefaultAsync(d => d.UserId == doctorUser.Id);
 
-                    dbContext.Doctors.Add(doctorEntity);
-                    await dbContext.SaveChangesAsync();
-                    logger?.LogInformation("Doctor entity created for user {UserId}", doctorUser.Id);
+                    if (existingDoctor == null)
+                    {
+                        var doctorEntity = new Doctor
+                        {
+                            Salary = 10000,
+                            WorkingHours = 40,
+                            HiringDate = DateTime.Now.Date,
+                            UserId = doctorUser.Id
+                        };
+                        dbContext.Doctors.Add(doctorEntity);
+                        await dbContext.SaveChangesAsync();
+                        logger?.LogInformation("Doctor entity created for user {UserId}", doctorUser.Id);
+                    }
                 }
                 else
                 {
-                    foreach (var err in createDoc.Errors) logger?.LogError(err.Description);
+                    foreach (var err in createDoc.Errors)
+                        logger?.LogError(err.Description);
                 }
             }
 
-            // ---- Patient user + domain Patient entity ----
+            // ---- 4️⃣ Seed Patient ----
             var patientEmail = "patient@test.com";
             var patientUser = await userManager.FindByEmailAsync(patientEmail);
             if (patientUser == null)
@@ -122,30 +133,36 @@ namespace SmartTeethCare.Repository.DataSeed
                     Address = "Giza, Egypt",
                     Gender = "Female",
                     DateOfBirth = DateTime.Parse("2000-03-20"),
-                    CreatedAt = DateTime.UtcNow,
-                    UpdatedAt = DateTime.UtcNow
+                    CreatedAt = DateTime.Now,
+                    UpdatedAt = DateTime.Now
                 };
 
                 var createPatient = await userManager.CreateAsync(patientUser, "Patient@123");
                 if (createPatient.Succeeded)
                 {
-                    await userManager.AddToRoleAsync(patientUser, "Patient");
+                    await userManager.AddToRoleAsync(patientUser, AppRoles.Patient);
                     logger?.LogInformation("Patient user created: {Email}", patientEmail);
 
-                    var patientEntity = new Patient
-                    {
-                        MedicalHistory = "No major history",
-                        UserId = patientUser.Id,
-                        
-                    };
+                    // Create Patient entity if not exists
+                    var existingPatient = await dbContext.Patients
+                        .FirstOrDefaultAsync(p => p.UserId == patientUser.Id);
 
-                    dbContext.Patients.Add(patientEntity);
-                    await dbContext.SaveChangesAsync();
-                    logger?.LogInformation("Patient entity created for user {UserId}", patientUser.Id);
+                    if (existingPatient == null)
+                    {
+                        var patientEntity = new Patient
+                        {
+                            MedicalHistory = "No major history",
+                            UserId = patientUser.Id
+                        };
+                        dbContext.Patients.Add(patientEntity);
+                        await dbContext.SaveChangesAsync();
+                        logger?.LogInformation("Patient entity created for user {UserId}", patientUser.Id);
+                    }
                 }
                 else
                 {
-                    foreach (var err in createPatient.Errors) logger?.LogError(err.Description);
+                    foreach (var err in createPatient.Errors)
+                        logger?.LogError(err.Description);
                 }
             }
         }
