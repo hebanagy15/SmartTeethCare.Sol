@@ -106,6 +106,7 @@ namespace SmartTeethCare.API
             builder.Services.AddScoped<IPatientAppointmentService, PatientAppointmentService>();
             builder.Services.AddScoped<IPatientMedicalHistoryService, PatientMedicalHistoryService>();
             builder.Services.AddScoped<IPatientPrescriptionService, PatientPrescriptionService>();
+            builder.Services.AddScoped<IPatientReviewService, PatientReviewService>();
             builder.Services.AddScoped<IAdminPatientService, AdminPatientService>();
             builder.Services.AddScoped<IAdminAppointmentService, AdminAppointmentService>();
             builder.Services.AddScoped<IAdminSpecialityService, AdminSpecialityService>();
