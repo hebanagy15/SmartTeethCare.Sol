@@ -18,15 +18,17 @@ namespace SmartTeethCare.API.Controllers.PatientModule
             _medicalHistoryService = medicalHistoryService;
         }
 
-        
-        [HttpGet]
+
+        [HttpGet("GetMyMedicalHistory")]
         public async Task<IActionResult> GetMyMedicalHistory()
         {
-            var patientId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-
+            
             var histories = await _medicalHistoryService.GetMyMedicalHistoryAsync(User);
 
             return Ok(histories);
         }
+
+        
+
     }
 }

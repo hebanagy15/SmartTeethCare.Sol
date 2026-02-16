@@ -53,75 +53,74 @@ namespace SmartTeethCare.API.Controllers.SecurityModule
         [HttpPost("register")]
         public async Task<ActionResult<UserDTO>> Register(RegisterDTO model)
         {
-            // 1) Check if user already exists
+            // 1) Set default role if not provided
+            var role = string.IsNullOrEmpty(model.Role) ? "Patient" : model.Role;
+
+            // 2) Check if email already exists
             var existingUser = await _userManager.FindByEmailAsync(model.Email);
             if (existingUser != null)
                 return BadRequest("Email is already registered.");
 
-            // Check if role exists
-            if (!await _roleManager.RoleExistsAsync(model.Role))
+            // 3) Validate role
+            if (!await _roleManager.RoleExistsAsync(role))
                 return BadRequest("Invalid role");
-            // 2) Create new user object
+
+            // 4) Create user object
             var user = new User
             {
                 UserName = model.UserName,
                 Email = model.Email,
-                Password = model.Password,
                 PhoneNumber = model.PhoneNumber,
                 Address = model.Address,
                 DateOfBirth = model.DateOfBirth,
                 Gender = model.Gender
             };
 
-            // 3) Create user using Identity
+            // 5) Create user in Identity
             var result = await _userManager.CreateAsync(user, model.Password);
 
             if (!result.Succeeded)
-            {
                 return BadRequest(result.Errors);
-            }
 
-            // Assign selected role
-            await _userManager.AddToRoleAsync(user, model.Role);
+            // 6) Assign role
+            await _userManager.AddToRoleAsync(user, role);
 
-
-            if (model.Role == "Doctor")
+            // 7) If Doctor → add to Doctors table
+            if (role == "Doctor")
             {
                 var doctor = new Doctor
                 {
                     UserId = user.Id,
                     Salary = 8000,
                     WorkingHours = 8,
-                    HiringDate = DateTime.Now
+                    HiringDate = DateTime.UtcNow
                 };
 
                 _context.Doctors.Add(doctor);
                 await _context.SaveChangesAsync();
             }
-            if (model.Role == "Patient")
+
+            // 8) If Patient → add to Patients table
+            if (role == "Patient")
             {
                 var patient = new Patient
                 {
                     UserId = user.Id,
-                    MedicalHistory = "No prior conditions",
+                    MedicalHistory = "No prior conditions"
                 };
 
                 _context.Patients.Add(patient);
                 await _context.SaveChangesAsync();
             }
-            // 6) Return response
-            return Ok(new UserDTO()
+
+            // 9) Return response with JWT
+            return Ok(new UserDTO
             {
                 UserName = user.UserName,
                 Email = user.Email,
-                Role = model.Role,
-                Token = await _authService.CreateTokenAsync(user, _userManager) // Generate JWT Token
+                Role = role,
+                Token = await _authService.CreateTokenAsync(user, _userManager)
             });
         }
-
-
     }
-
-
-
 }

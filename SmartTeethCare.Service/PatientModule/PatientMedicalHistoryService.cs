@@ -18,10 +18,19 @@ namespace SmartTeethCare.Service.PatientModule
         public async Task<IEnumerable<MedicalHistoryDTO>> GetMyMedicalHistoryAsync(ClaimsPrincipal user)
         {
             // Extract PatientId from token
-            var patientId = int.Parse(
-                user.FindFirstValue(ClaimTypes.NameIdentifier)
-            );
+            var userId = user.FindFirstValue(ClaimTypes.NameIdentifier) ?? throw new Exception("User not authenticated");
 
+            var patients = await _uow.Repository<Patient>()
+                .FindAsync(p => p.UserId == userId);
+
+            var patient = patients.FirstOrDefault();
+
+            if (patient == null)
+                throw new Exception("Patient not found");
+
+            var patientId = patient.Id;
+
+            
             // Get medical history for this patient
             var histories = await _uow.Repository<MedicalHistory>().FindAsync(h => h.PatientId == patientId,include: q => q.Include(x => x.Doctor).ThenInclude(d => d.User));
 
