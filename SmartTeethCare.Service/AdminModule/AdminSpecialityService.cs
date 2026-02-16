@@ -46,6 +46,15 @@ namespace SmartTeethCare.Service.AdminModule
         public async Task<SpecialityDTO> CreateAsync(SpecialityDTO dto, ClaimsPrincipal user)
         {
             var userId = user.FindFirstValue(ClaimTypes.NameIdentifier)?? throw new Exception("User not authenticated");
+            var Admins = await _unitOfWork.Repository<Admin>()
+                .FindAsync(p => p.UserId == userId);
+
+            var Admin = Admins.FirstOrDefault();
+
+            if (Admin == null)
+                throw new Exception("Admin not found");
+            var AdminId = Admin.Id;
+
             var speciality = new Speciality
             {
                 Name = dto.Name,
@@ -64,6 +73,14 @@ namespace SmartTeethCare.Service.AdminModule
                 throw new ArgumentException("Id is required for update");
 
             var userId = user.FindFirstValue(ClaimTypes.NameIdentifier)?? throw new Exception("User not authenticated");
+            var Admins = await _unitOfWork.Repository<Admin>()
+                .FindAsync(p => p.UserId == userId);
+
+            var Admin = Admins.FirstOrDefault();
+
+            if (Admin == null)
+                throw new Exception("Admin not found");
+            var AdminId = Admin.Id;
 
             var repository = _unitOfWork.Repository<Speciality>();
             var speciality = await repository.GetByIdAsync(dto.Id.Value);
@@ -81,6 +98,15 @@ namespace SmartTeethCare.Service.AdminModule
         public async Task<bool> DeleteAsync(int id, ClaimsPrincipal user)
         {
             var userId = user.FindFirstValue(ClaimTypes.NameIdentifier)?? throw new Exception("User not authenticated");
+            var Admins = await _unitOfWork.Repository<Admin>()
+                .FindAsync(p => p.UserId == userId);
+
+            var Admin = Admins.FirstOrDefault();
+
+            if (Admin == null)
+                throw new Exception("Admin not found");
+            var AdminId = Admin.Id;
+
             var repository = _unitOfWork.Repository<Speciality>();
             var speciality = await repository.GetByIdAsync(id);
             if (speciality == null)
