@@ -17,14 +17,23 @@ namespace SmartTeethCare.API.Controllers.PatientModule
         {
             _prescriptionService = prescriptionService;
         }
-        [HttpGet]
+        [HttpGet("GetMyPrescriptions")]
         public async Task<ActionResult<List<PrescriptionDetailsDTO>>> GetMyPrescriptions()
         {
-            var user = HttpContext.User;
-            var prescriptions = await _prescriptionService.GetMyPrescriptionsAsync(user);
-            return Ok(prescriptions);
+            try
+            {
+                var user = HttpContext.User;
+                var prescriptions = await _prescriptionService.GetMyPrescriptionsAsync(user);
+                return Ok(prescriptions);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
         }
-        [HttpGet("appointment/{appointmentId}")]
+
+        [HttpGet("GetPrescriptionByAppointment/{appointmentId}")]
+
         public async Task<ActionResult<PrescriptionDetailsDTO>> GetByAppointment(int appointmentId)
         {
             var user = HttpContext.User;
@@ -39,5 +48,9 @@ namespace SmartTeethCare.API.Controllers.PatientModule
                 return Forbid(); 
             }
         }
+
+        
+
+
     }
 }

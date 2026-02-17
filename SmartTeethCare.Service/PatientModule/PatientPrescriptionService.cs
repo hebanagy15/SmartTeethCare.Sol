@@ -27,7 +27,17 @@ namespace SmartTeethCare.Service.PatientModule
         // Get all prescriptions for the logged-in patient
         public async Task<List<PrescriptionDetailsDTO>> GetMyPrescriptionsAsync(ClaimsPrincipal user)
         {
-            var patientId = int.Parse(user.FindFirstValue(ClaimTypes.NameIdentifier));
+            var userId = user.FindFirstValue(ClaimTypes.NameIdentifier) ?? throw new Exception("User not authenticated");
+
+            var patients = await _uow.Repository<Patient>()
+                .FindAsync(p => p.UserId == userId);
+
+            var patient = patients.FirstOrDefault();
+
+            if (patient == null)
+                throw new Exception("Patient not found");
+
+            var patientId = patient.Id;
 
             var prescriptions = await _uow.Repository<Prescription>()
                 .FindAsync(
@@ -61,7 +71,17 @@ namespace SmartTeethCare.Service.PatientModule
         // Get a single prescription by appointment for the logged-in patient
         public async Task<PrescriptionDetailsDTO> GetByAppointmentAsync(int appointmentId, ClaimsPrincipal user)
         {
-            var patientId = int.Parse(user.FindFirstValue(ClaimTypes.NameIdentifier));
+            var userId = user.FindFirstValue(ClaimTypes.NameIdentifier) ?? throw new Exception("User not authenticated");
+
+            var patients = await _uow.Repository<Patient>()
+                .FindAsync(p => p.UserId == userId);
+
+            var patient = patients.FirstOrDefault();
+
+            if (patient == null)
+                throw new Exception("Patient not found");
+
+            var patientId = patient.Id;
 
             var prescription = (await _uow.Repository<Prescription>()
                 .FindAsync(

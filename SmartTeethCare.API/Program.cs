@@ -196,6 +196,8 @@ namespace SmartTeethCare.API
                 }
             }
 
+            
+
             app.Run();
         }
     }
