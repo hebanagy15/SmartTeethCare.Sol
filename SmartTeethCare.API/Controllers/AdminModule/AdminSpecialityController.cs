@@ -22,7 +22,7 @@ namespace SmartTeethCare.API.Controllers.AdminModule
         private ClaimsPrincipal CurrentUser => User;
 
         // Secure GetAll
-        [HttpGet(Name = "GetAllSpecialities")]
+        [HttpGet]
         public async Task<IActionResult> GetAll()
         {
             var result = await _service.GetAllAsync();
