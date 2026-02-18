@@ -4,12 +4,8 @@ using SmartTeethCare.Core.Entities;
 using SmartTeethCare.Core.Enums;
 using SmartTeethCare.Core.Interfaces.Services.PatientModule;
 using SmartTeethCare.Core.Interfaces.UnitOfWork;
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Security.Claims;
-using System.Text;
-using System.Threading.Tasks;
+
 
 namespace SmartTeethCare.Service.PatientModule
 {

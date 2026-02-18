@@ -62,6 +62,9 @@ namespace SmartTeethCare.API.Controllers.PatientModule
             var result = await _service.GetMyReviewsForDoctorAsync(doctorId, User);
             return Ok(result);
         }
+
+        
+
     }
 }
 

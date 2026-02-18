@@ -8,10 +8,10 @@ namespace SmartTeethCare.Core.Enums
 {
     public enum AppointmentStatus
     {
-        Pending,
+        Pending, // 0
         Approved,
         Rejected,
-        Completed,
+        Completed, // 3
         Cancelled
     }
 }
