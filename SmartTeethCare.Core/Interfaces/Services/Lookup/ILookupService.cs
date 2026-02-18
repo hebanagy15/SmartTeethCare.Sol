@@ -11,5 +11,7 @@ namespace SmartTeethCare.Core.Interfaces.Services.Lookup
     {
         Task<IEnumerable<DoctorDTO>> GetDoctorsAsync();
         Task<IEnumerable<SpecializationDTO>> GetSpecializationsAsync();
+        Task<IEnumerable<DoctorDTO>> GetDoctorsBySpecialityAsync(int specialityId);
+
     }
 }

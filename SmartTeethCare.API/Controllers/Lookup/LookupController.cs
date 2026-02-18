@@ -25,6 +25,16 @@ namespace SmartTeethCare.API.Controllers.Lookup
             return Ok(doctors);
         }
 
+        // GET http://localhost:5039/api/Lookup/DoctorsBySpeciality/3
+
+        [HttpGet("DoctorsBySpeciality/{specialityId}")]
+        public async Task<IActionResult> GetDoctorsBySpeciality(int specialityId)
+        {
+            var doctors = await _lookupService.GetDoctorsBySpecialityAsync(specialityId);
+            return Ok(doctors);
+        }
+
+
         // GET: api/Lookup/Specializations
         [HttpGet("Specializations")]
         public async Task<ActionResult<IEnumerable<SpecializationDTO>>> GetSpecializations()
