@@ -16,6 +16,7 @@ using SmartTeethCare.Core.Interfaces.Services.Lookup;
 using SmartTeethCare.Core.Interfaces.Services.PatientModule;
 using SmartTeethCare.Core.Interfaces.UnitOfWork;
 using SmartTeethCare.Repository.Data;
+using SmartTeethCare.Repository.DataSeed;
 using SmartTeethCare.Repository.Implementation;
 using SmartTeethCare.Service;
 using SmartTeethCare.Service.AdminModule;
@@ -46,8 +47,9 @@ namespace SmartTeethCare.API
                 {
                     policy
                         .WithOrigins(
-                            "http://localhost:8081"         // menna
-                            
+                            "http://localhost:8081" ,        // menna
+                            "http://localhost:5039"          // Heba
+
                         // ·„« «·›—Ê‰  Ì ⁄„·Â deploy ÷Ì›Ì «·œÊ„Ì‰ Â‰«
                         // "https://smart-teeth-care.vercel.app"
                         )
@@ -182,11 +184,15 @@ namespace SmartTeethCare.API
             using (var scope = app.Services.CreateScope())
             {
                 var services = scope.ServiceProvider;
+                var context = services.GetRequiredService<ApplicationDbContext>();
+                var userManager = services.GetRequiredService<UserManager<User>>();
                 try
                 {
                     var db = services.GetRequiredService<ApplicationDbContext>();
                     db.Database.Migrate();
                     await SmartTeethCare.Repository.DataSeed.SeedUsers.SeedAsync(services);
+                    
+                    await DoctorSeed.SeedDoctorsAsy(userManager, context);
                 }
                 catch (Exception ex)
                 {
