@@ -1,10 +1,13 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using SmartTeethCare.API.DTOs;
+using SmartTeethCare.Core.DTOs.SecurityModule;
 using SmartTeethCare.Core.Entities;
-using SmartTeethCare.Core.Interfaces.Services;
+using SmartTeethCare.Core.Interfaces.Services.SecurityModule;
+using SmartTeethCare.Core.Interfaces.UnitOfWork;
 using SmartTeethCare.Repository.Data;
+using System.Security.Cryptography;
 
 namespace SmartTeethCare.API.Controllers.SecurityModule
 {
@@ -17,18 +20,24 @@ namespace SmartTeethCare.API.Controllers.SecurityModule
         private readonly RoleManager<IdentityRole> _roleManager;
         private readonly ApplicationDbContext _context;
         private readonly IAuthService _authService;
+        private readonly IUnitOfWork _unitOfWork;
+        private readonly IConfiguration _configuration;
 
-        public AccountController(UserManager<User> userManager, SignInManager<User> signInManager, RoleManager<IdentityRole> roleManager, ApplicationDbContext context, IAuthService authService)
+        public AccountController(UserManager<User> userManager, SignInManager<User> signInManager, RoleManager<IdentityRole> roleManager, ApplicationDbContext context, IAuthService authService , IUnitOfWork unitOfWork , IConfiguration configuration)
         {
             _userManager = userManager;
             _signInManager = signInManager;
             _roleManager = roleManager;
             _context = context;
             _authService = authService;
-
+            _unitOfWork = unitOfWork;
+            _configuration = configuration;
         }
+
+       
+
         [HttpPost("login")]
-        public async Task<ActionResult<UserDTO>> Login(LoginDTO model)
+        public async Task<ActionResult<LoginResponseDTO>> Login(LoginDTO model)
         {
             var user = await _userManager.FindByEmailAsync(model.Email);
 
@@ -39,19 +48,38 @@ namespace SmartTeethCare.API.Controllers.SecurityModule
 
             if (!result.Succeeded)
                 return Unauthorized("Invalid Email or Password");
-
-
-            return Ok(new UserDTO
+            // 🔹 Generate Refresh Token
+            var refreshToken = new RefreshToken
             {
-                UserName = user.UserName,
-                Email = user.Email,
+                Token = Convert.ToBase64String(RandomNumberGenerator.GetBytes(64)),
+                ExpiresOn = DateTime.UtcNow.AddDays(
+                    double.Parse(_configuration["JWT:RefreshTokenExpiryInDays"])
+                ),
+                IsRevoked = false,
+                UserId = user.Id
+            };
+
+            await _unitOfWork.Repository<RefreshToken>().AddAsync(refreshToken);
+            await _unitOfWork.CompleteAsync();
+
+            var jwt = await _authService.CreateTokenAsync(user, _userManager);
+
+
+            return Ok(new LoginResponseDTO
+            {
+                UserName = user.UserName ?? "Un Known",
+                Email = user.Email ?? "Un Known",
                 Role = (await _userManager.GetRolesAsync(user)).FirstOrDefault(),
-                Token = await _authService.CreateTokenAsync(user, _userManager)    // Generate JWT Token
+
+                Token = jwt,
+                RefreshToken = refreshToken.Token,
+                Expiration = DateTime.UtcNow.AddMinutes(double.Parse(_configuration["JWT:AccessTokenExpiryInMinutes"])
+         )
             });
         }
 
         [HttpPost("register")]
-        public async Task<ActionResult<UserDTO>> Register(RegisterDTO model)
+        public async Task<ActionResult<LoginResponseDTO>> Register(RegisterDTO model)
         {
             // 1) Set default role if not provided
             var role = string.IsNullOrEmpty(model.Role) ? "Patient" : model.Role;
@@ -113,14 +141,55 @@ namespace SmartTeethCare.API.Controllers.SecurityModule
                 await _context.SaveChangesAsync();
             }
 
-            // 9) Return response with JWT
-            return Ok(new UserDTO
+            // 🔹 Generate Refresh Token
+            var refreshToken = new RefreshToken
+            {
+                Token = Convert.ToBase64String(RandomNumberGenerator.GetBytes(64)),
+                ExpiresOn = DateTime.UtcNow.AddDays(
+                    double.Parse(_configuration["JWT:RefreshTokenExpiryInDays"])
+                ),
+                IsRevoked = false,
+                UserId = user.Id
+            };
+            await _unitOfWork.Repository<RefreshToken>().AddAsync(refreshToken);
+            await _unitOfWork.CompleteAsync();
+
+            var jwt = await _authService.CreateTokenAsync(user, _userManager);
+
+            return Ok(new LoginResponseDTO
             {
                 UserName = user.UserName,
                 Email = user.Email,
                 Role = role,
-                Token = await _authService.CreateTokenAsync(user, _userManager)
+                Token = jwt,
+                RefreshToken = refreshToken.Token,
+                Expiration = DateTime.UtcNow.AddMinutes(double.Parse(_configuration["JWT:AccessTokenExpiryInMinutes"]))
             });
+        }
+            
+
+        [HttpPost("RefreshToken")]
+        public async Task<ActionResult<AuthResponseDTO>> Refresh([FromBody] RefreshTokenRequestDTO model)
+        {
+            try
+            {
+                
+                var newTokens = await _authService.RefreshTokenAsync(model.RefreshToken);
+
+                return Ok(newTokens);
+            }
+            catch (Exception ex)
+            {
+               
+                return Unauthorized(new { message = ex.Message });
+            }
+        }
+
+        [HttpPost("RevokeRefreshToken")]
+        public async Task<IActionResult> Revoke([FromBody] RefreshTokenRequestDTO model)
+        {
+            await _authService.RevokeTokenAsync(model.RefreshToken);
+            return Ok(new { message = "Token revoked successfully" });
         }
     }
 }
