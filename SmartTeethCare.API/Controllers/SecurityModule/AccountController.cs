@@ -217,5 +217,15 @@ namespace SmartTeethCare.API.Controllers.SecurityModule
             await _authService.ResetPasswordAsync(dto);
             return Ok("Password reset successfully.");
         }
+
+        [HttpPost("logout")]
+        public async Task<IActionResult> Logout([FromBody] RevokeTokenDTO dto)
+        {
+            if (string.IsNullOrEmpty(dto.RefreshToken))
+                return BadRequest("Refresh token is required.");
+
+            await _authService.RevokeTokenAsync(dto.RefreshToken);
+            return Ok(new { message = "Logged out successfully." });
+        }
     }
 }
