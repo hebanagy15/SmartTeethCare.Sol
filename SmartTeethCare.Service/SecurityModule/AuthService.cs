@@ -21,12 +21,13 @@ namespace SmartTeethCare.Service.SecurityModule
         private readonly IConfiguration _configuration;
         private readonly IUnitOfWork _unitOfWork;
         private readonly UserManager<User> _userManager;
-
-        public AuthService(IConfiguration configuration , IUnitOfWork unitOfWork, UserManager<User> userManager )
+        private readonly IEmailService _emailService;
+        public AuthService(IConfiguration configuration , IUnitOfWork unitOfWork, UserManager<User> userManager , IEmailService emailService)
         {
             _configuration = configuration;
             _unitOfWork = unitOfWork;
             _userManager = userManager;
+            _emailService = emailService;
         }
         public async Task<string> CreateTokenAsync(User user, UserManager<User> userManager)
         {
@@ -134,6 +135,43 @@ namespace SmartTeethCare.Service.SecurityModule
 
             if (!result.Succeeded)
                 throw new Exception("Email confirmation failed.");
+        }
+
+        public async Task ForgotPasswordAsync(ForgotPasswordDTO dto)
+        {
+            var user = await _userManager.FindByEmailAsync(dto.Email);
+
+            if (user == null)
+                return; // عشان security منقولش الإيميل موجود ولا لا
+
+            var token = await _userManager.GeneratePasswordResetTokenAsync(user);
+            var encodedToken = Uri.EscapeDataString(token);
+
+            var resetLink =
+                $"{_configuration["AppSettings:BaseUrl"]}/api/account/reset-password?email={user.Email}&token={encodedToken}";
+
+            await _emailService.SendEmailAsync(
+                user.Email,
+                "Reset Password",
+                $"Click here to reset your password: <a href='{resetLink}'>Reset Password</a>");
+        }
+
+        public async Task ResetPasswordAsync(ResetPasswordDTO dto)
+        {
+            var user = await _userManager.FindByEmailAsync(dto.Email);
+
+            if (user == null)
+                throw new Exception("Invalid request.");
+
+            var decodedToken = Uri.UnescapeDataString(dto.Token);
+
+            var result = await _userManager.ResetPasswordAsync(
+                user,
+                decodedToken,
+                dto.NewPassword);
+
+            if (!result.Succeeded)
+                throw new Exception("Password reset failed.");
         }
     }
 }

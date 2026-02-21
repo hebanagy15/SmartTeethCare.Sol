@@ -203,5 +203,19 @@ namespace SmartTeethCare.API.Controllers.SecurityModule
             await _authService.ConfirmEmailAsync(dto);
             return Ok("Email confirmed successfully.");
         }
+
+        [HttpPost("forgot-password")]
+        public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordDTO dto)
+        {
+            await _authService.ForgotPasswordAsync(dto);
+            return Ok("If the email exists, reset link has been sent.");
+        }
+
+        [HttpPost("reset-password")]
+        public async Task<IActionResult> ResetPassword(ResetPasswordDTO dto)
+        {
+            await _authService.ResetPasswordAsync(dto);
+            return Ok("Password reset successfully.");
+        }
     }
 }
