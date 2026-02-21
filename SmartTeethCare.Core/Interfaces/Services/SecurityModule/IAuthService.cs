@@ -14,5 +14,6 @@ namespace SmartTeethCare.Core.Interfaces.Services.SecurityModule
         Task<string> CreateTokenAsync(User user, UserManager<User> userManager);
         Task<AuthResponseDTO> RefreshTokenAsync(string refreshToken);
         Task RevokeTokenAsync(string refreshToken);
+        Task ConfirmEmailAsync(ConfirmEmailDTO dto);
     }
 }

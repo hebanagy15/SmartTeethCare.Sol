@@ -122,6 +122,19 @@ namespace SmartTeethCare.Service.SecurityModule
                 IsRevoked = false
             };
         }
+
+        public async Task ConfirmEmailAsync(ConfirmEmailDTO dto)
+        {
+            var user = await _userManager.FindByIdAsync(dto.UserId);
+
+            if (user == null)
+                throw new Exception("Invalid user.");
+
+            var result = await _userManager.ConfirmEmailAsync(user, dto.Token);
+
+            if (!result.Succeeded)
+                throw new Exception("Email confirmation failed.");
+        }
     }
 }
 

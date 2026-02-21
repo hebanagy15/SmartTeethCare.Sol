@@ -7,6 +7,7 @@ using SmartTeethCare.Core.Entities;
 using SmartTeethCare.Core.Interfaces.Services.SecurityModule;
 using SmartTeethCare.Core.Interfaces.UnitOfWork;
 using SmartTeethCare.Repository.Data;
+using SmartTeethCare.Service.SecurityModule;
 using System.Security.Cryptography;
 
 namespace SmartTeethCare.API.Controllers.SecurityModule
@@ -22,8 +23,9 @@ namespace SmartTeethCare.API.Controllers.SecurityModule
         private readonly IAuthService _authService;
         private readonly IUnitOfWork _unitOfWork;
         private readonly IConfiguration _configuration;
+        private readonly IEmailService _emailService;
 
-        public AccountController(UserManager<User> userManager, SignInManager<User> signInManager, RoleManager<IdentityRole> roleManager, ApplicationDbContext context, IAuthService authService , IUnitOfWork unitOfWork , IConfiguration configuration)
+        public AccountController(UserManager<User> userManager, SignInManager<User> signInManager, RoleManager<IdentityRole> roleManager, ApplicationDbContext context, IAuthService authService , IUnitOfWork unitOfWork , IConfiguration configuration , IEmailService emailService)
         {
             _userManager = userManager;
             _signInManager = signInManager;
@@ -32,6 +34,7 @@ namespace SmartTeethCare.API.Controllers.SecurityModule
             _authService = authService;
             _unitOfWork = unitOfWork;
             _configuration = configuration;
+            _emailService = emailService;
         }
 
        
@@ -39,10 +42,16 @@ namespace SmartTeethCare.API.Controllers.SecurityModule
         [HttpPost("login")]
         public async Task<ActionResult<LoginResponseDTO>> Login(LoginDTO model)
         {
+            
             var user = await _userManager.FindByEmailAsync(model.Email);
 
+            
             if (user == null)
                 return Unauthorized("Invalid Email or Password");
+
+            if (!user.EmailConfirmed)
+                return BadRequest("Please confirm your email first.");
+
 
             var result = await _signInManager.CheckPasswordSignInAsync(user, model.Password, false);
 
@@ -113,6 +122,24 @@ namespace SmartTeethCare.API.Controllers.SecurityModule
             // 6) Assign role
             await _userManager.AddToRoleAsync(user, role);
 
+            // 🔹 Generate Email Confirmation Token
+            var token = await _userManager.GenerateEmailConfirmationTokenAsync(user);
+
+            // لازم نعمل Encode للتوكن
+            var encodedToken = Uri.EscapeDataString(token);
+
+            var baseUrl = _configuration["AppSettings:BaseUrl"];
+
+            var confirmationLink =
+                $"{baseUrl}/api/account/confirm-email?userId={user.Id}&token={encodedToken}";
+
+            // 🔹 Send Email
+            await _emailService.SendEmailAsync(
+                user.Email,
+                "Confirm Your Email",
+                $"Please confirm your account by clicking <a href='{confirmationLink}'>here</a>"
+            );
+
             // 7) If Doctor → add to Doctors table
             if (role == "Doctor")
             {
@@ -141,30 +168,8 @@ namespace SmartTeethCare.API.Controllers.SecurityModule
                 await _context.SaveChangesAsync();
             }
 
-            // 🔹 Generate Refresh Token
-            var refreshToken = new RefreshToken
-            {
-                Token = Convert.ToBase64String(RandomNumberGenerator.GetBytes(64)),
-                ExpiresOn = DateTime.UtcNow.AddDays(
-                    double.Parse(_configuration["JWT:RefreshTokenExpiryInDays"])
-                ),
-                IsRevoked = false,
-                UserId = user.Id
-            };
-            await _unitOfWork.Repository<RefreshToken>().AddAsync(refreshToken);
-            await _unitOfWork.CompleteAsync();
-
-            var jwt = await _authService.CreateTokenAsync(user, _userManager);
-
-            return Ok(new LoginResponseDTO
-            {
-                UserName = user.UserName,
-                Email = user.Email,
-                Role = role,
-                Token = jwt,
-                RefreshToken = refreshToken.Token,
-                Expiration = DateTime.UtcNow.AddMinutes(double.Parse(_configuration["JWT:AccessTokenExpiryInMinutes"]))
-            });
+            
+            return Ok("Registration successful. Please check your email to confirm your account.");
         }
             
 
@@ -190,6 +195,13 @@ namespace SmartTeethCare.API.Controllers.SecurityModule
         {
             await _authService.RevokeTokenAsync(model.RefreshToken);
             return Ok(new { message = "Token revoked successfully" });
+        }
+
+        [HttpGet("confirm-email")]
+        public async Task<IActionResult> ConfirmEmail([FromQuery] ConfirmEmailDTO dto)
+        {
+            await _authService.ConfirmEmailAsync(dto);
+            return Ok("Email confirmed successfully.");
         }
     }
 }
