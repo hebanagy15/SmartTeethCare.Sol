@@ -151,8 +151,8 @@ namespace SmartTeethCare.API.Controllers.SecurityModule
                     HiringDate = DateTime.UtcNow
                 };
 
-                _context.Doctors.Add(doctor);
-                await _context.SaveChangesAsync();
+                await _unitOfWork.Repository<Doctor>().AddAsync(doctor);
+                await _unitOfWork.CompleteAsync();
             }
 
             // 8) If Patient → add to Patients table
@@ -164,11 +164,11 @@ namespace SmartTeethCare.API.Controllers.SecurityModule
                     MedicalHistory = "No prior conditions"
                 };
 
-                _context.Patients.Add(patient);
-                await _context.SaveChangesAsync();
+                await _unitOfWork.Repository<Patient>().AddAsync(patient);
+                await _unitOfWork.CompleteAsync();
             }
 
-            
+
             return Ok("Registration successful. Please check your email to confirm your account.");
         }
             
