@@ -14,6 +14,7 @@ using SmartTeethCare.Core.Interfaces.Services.AdminModule;
 using SmartTeethCare.Core.Interfaces.Services.DoctorModule;
 using SmartTeethCare.Core.Interfaces.Services.Lookup;
 using SmartTeethCare.Core.Interfaces.Services.PatientModule;
+using SmartTeethCare.Core.Interfaces.Services.SecurityModule;
 using SmartTeethCare.Core.Interfaces.UnitOfWork;
 using SmartTeethCare.Repository.Data;
 using SmartTeethCare.Repository.DataSeed;
@@ -24,6 +25,7 @@ using SmartTeethCare.Service.DoctorModule;
 using SmartTeethCare.Service.Implementation;
 using SmartTeethCare.Service.Lookup;
 using SmartTeethCare.Service.PatientModule;
+using SmartTeethCare.Service.SecurityModule;
 using SmartTeethCare.Services.AppointmentModule;
 using SmartTeethCare.Web.Areas.Patient.Controllers;
 using System.Text;
@@ -107,6 +109,7 @@ namespace SmartTeethCare.API
             builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 
             builder.Services.AddScoped(typeof(IAuthService), typeof(AuthService));
+            builder.Services.AddScoped<IEmailService, EmailService>();
             builder.Services.AddScoped<IPatientAppointmentService, PatientAppointmentService>();
             builder.Services.AddScoped<IPatientMedicalHistoryService, PatientMedicalHistoryService>();
             builder.Services.AddScoped<IPatientPrescriptionService, PatientPrescriptionService>();

@@ -30,6 +30,8 @@ public class ApplicationDbContext : IdentityDbContext<User>
     public DbSet<IdentityRole> Roles { get; set; }
 	public DbSet<MedicalHistory> MedicalHistories { get; set; }
 
+    public DbSet<RefreshToken> RefreshTokens { get; set; }
+
 
 
 

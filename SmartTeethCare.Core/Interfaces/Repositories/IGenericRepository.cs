@@ -19,6 +19,7 @@ namespace SmartTeethCare.Core.Interfaces.Repositories
 
         Task<bool> AnyAsync(Expression<Func<T, bool>> predicate);
         Task<List<T>> FindAsync(Expression<Func<T, bool>> predicate = null, Func<IQueryable<T>, IIncludableQueryable<T, object>> include = null);
+        IQueryable<T> Query();
 
     }
 }

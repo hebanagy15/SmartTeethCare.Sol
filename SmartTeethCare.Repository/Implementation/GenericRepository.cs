@@ -19,13 +19,15 @@ namespace SmartTeethCare.Repository.Implementation
         public async Task AddAsync(T entity)
         {
             await _dbContext.Set<T>().AddAsync(entity);
-            await _dbContext.SaveChangesAsync();
+            await Task.CompletedTask;
+
         }
 
         public async Task DeleteAsync(T entity)
         {
             _dbContext.Set<T>().Remove(entity);
-            await _dbContext.SaveChangesAsync();
+            await Task.CompletedTask;
+
         }
 
         public async Task<IEnumerable<T>> GetAllAsync()
@@ -41,7 +43,8 @@ namespace SmartTeethCare.Repository.Implementation
         public async Task UpdateAsync(T entity)
         {
             _dbContext.Set<T>().Update(entity);
-            await _dbContext.SaveChangesAsync();
+            await Task.CompletedTask;
+
         }
         public async Task<bool> AnyAsync(Expression<Func<T, bool>> predicate)
         {
@@ -58,6 +61,11 @@ namespace SmartTeethCare.Repository.Implementation
                 query = include(query);
 
             return await query.ToListAsync();
+        }
+
+        public IQueryable<T> Query()
+        {
+            return _dbContext.Set<T>().AsQueryable();
         }
 
 
