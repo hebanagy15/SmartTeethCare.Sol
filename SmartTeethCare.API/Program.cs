@@ -48,7 +48,9 @@ namespace SmartTeethCare.API
                     policy
                         .WithOrigins(
                             "http://localhost:8081" ,        // menna
-                            "http://localhost:5039"          // Heba
+                            "http://localhost:5039",          // Heba
+
+                            "http://localhost:8080"   //eman
 
                         // ·„« «·›—Ê‰  Ì ⁄„·Â deploy ÷Ì›Ì «·œÊ„Ì‰ Â‰«
                         // "https://smart-teeth-care.vercel.app"
