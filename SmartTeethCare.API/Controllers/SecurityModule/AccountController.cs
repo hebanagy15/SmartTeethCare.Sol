@@ -88,10 +88,12 @@ namespace SmartTeethCare.API.Controllers.SecurityModule
         }
 
         [HttpPost("register")]
-        public async Task<ActionResult<LoginResponseDTO>> Register(RegisterDTO model)
+        public async Task<ActionResult> Register(RegisterDTO model)
         {
             // 1) Set default role if not provided
-            var role = string.IsNullOrEmpty(model.Role) ? "Patient" : model.Role;
+            var role = string.IsNullOrWhiteSpace(model.Role)
+                           ? "Patient"
+                           : model.Role.Trim();
 
             // 2) Check if email already exists
             var existingUser = await _userManager.FindByEmailAsync(model.Email);
@@ -156,8 +158,10 @@ namespace SmartTeethCare.API.Controllers.SecurityModule
             }
 
             // 8) If Patient → add to Patients table
-            if (role == "Patient")
+            if (role.Equals("patient", StringComparison.OrdinalIgnoreCase))
             {
+                role = "Patient";
+
                 var patient = new Patient
                 {
                     UserId = user.Id,
@@ -167,7 +171,6 @@ namespace SmartTeethCare.API.Controllers.SecurityModule
                 await _unitOfWork.Repository<Patient>().AddAsync(patient);
                 await _unitOfWork.CompleteAsync();
             }
-
 
             return Ok("Registration successful. Please check your email to confirm your account.");
         }
