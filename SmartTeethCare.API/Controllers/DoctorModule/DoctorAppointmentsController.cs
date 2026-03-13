@@ -46,10 +46,6 @@ namespace SmartTeethCare.API.Controllers.DoctorModule
             return Ok();
         }
 
-        [HttpGet("/api/doctor/dashboard")]
-        public async Task<IActionResult> Dashboard()
-        {
-            return Ok(await _service.GetDoctorDashboardAsync(UserId));
-        }
+      
     }
 }
