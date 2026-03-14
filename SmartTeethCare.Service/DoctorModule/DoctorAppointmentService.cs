@@ -3,16 +3,7 @@ using SmartTeethCare.Core.Entities;
 using SmartTeethCare.Core.Enums;
 using SmartTeethCare.Core.Interfaces.Services.DoctorModule;
 using SmartTeethCare.Core.Interfaces.UnitOfWork;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
-
-
-
-
 
 namespace SmartTeethCare.Service.DoctorModule
 {
@@ -54,7 +45,9 @@ namespace SmartTeethCare.Service.DoctorModule
                 );
 
             if (status.HasValue)
-                appointments = appointments.Where(a => a.Status == status).ToList();
+                appointments = appointments
+                    .Where(a => a.Status == status)
+                    .ToList();
 
             if (date.HasValue)
                 appointments = appointments
@@ -62,14 +55,19 @@ namespace SmartTeethCare.Service.DoctorModule
                     .ToList();
 
             if (!string.IsNullOrEmpty(search))
+            {
                 appointments = appointments
-                    .Where(a => a.patient.User.Email.Contains(search))
+                    .Where(a =>
+                        a.patient != null &&
+                        a.patient.User != null &&
+                        a.patient.User.Email.Contains(search))
                     .ToList();
+            }
 
             return appointments.Select(a => new DoctorAppointmentDto
             {
                 AppointmentId = a.Id,
-                PatientName = a.patient.User.Email,
+                PatientName = a.patient?.User?.Email ?? "Unknown",
                 CreatedAt = a.CreatedAt,
                 Status = a.Status
             }).ToList();
@@ -83,9 +81,10 @@ namespace SmartTeethCare.Service.DoctorModule
                 .GetByIdAsync(appointmentId);
 
             if (appointment == null || appointment.DoctorID != doctorId)
-                throw new KeyNotFoundException();
+                throw new KeyNotFoundException("Appointment not found");
 
             appointment.Status = AppointmentStatus.Completed;
+
             await _unitOfWork.CompleteAsync();
         }
 
@@ -97,15 +96,17 @@ namespace SmartTeethCare.Service.DoctorModule
                 .GetByIdAsync(appointmentId);
 
             if (appointment == null || appointment.DoctorID != doctorId)
-                throw new KeyNotFoundException();
+                throw new KeyNotFoundException("Appointment not found");
 
             appointment.Status = AppointmentStatus.Rejected;
+
             await _unitOfWork.CompleteAsync();
         }
 
         public async Task<DoctorDashboardDto> GetDoctorDashboardAsync(string userId)
         {
             var doctorId = await GetDoctorIdAsync(userId);
+
             var today = DateTime.Today;
 
             var appointments = await _unitOfWork.Repository<Appointment>()
@@ -113,12 +114,15 @@ namespace SmartTeethCare.Service.DoctorModule
 
             return new DoctorDashboardDto
             {
-                TodayAppointments = appointments.Count(a => a.CreatedAt.Date == today),
-                PendingAppointments = appointments.Count(a => a.Status == AppointmentStatus.Pending),
-                CompletedAppointments = appointments.Count(a => a.Status == AppointmentStatus.Completed)
+                TodayAppointments = appointments
+                    .Count(a => a.CreatedAt.Date == today),
+
+                PendingAppointments = appointments
+                    .Count(a => a.Status == AppointmentStatus.Pending),
+
+                CompletedAppointments = appointments
+                    .Count(a => a.Status == AppointmentStatus.Completed)
             };
         }
     }
-    }
-
-
+}
