@@ -31,6 +31,7 @@ public class ApplicationDbContext : IdentityDbContext<User>
 	public DbSet<MedicalHistory> MedicalHistories { get; set; }
 
     public DbSet<RefreshToken> RefreshTokens { get; set; }
+    public DbSet<Notification> Notifications { get; set; }
 
 
 

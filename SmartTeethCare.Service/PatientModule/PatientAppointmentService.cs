@@ -1,8 +1,10 @@
-﻿using Microsoft.AspNetCore.Identity;
+﻿using Hangfire;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using SmartTeethCare.Core.DTOs.PatientModule;
 using SmartTeethCare.Core.Entities;
 using SmartTeethCare.Core.Enums;
+using SmartTeethCare.Core.Interfaces.Services.NotificationService;
 using SmartTeethCare.Core.Interfaces.Services.PatientModule;
 using SmartTeethCare.Core.Interfaces.UnitOfWork;
 using System;
@@ -14,11 +16,13 @@ namespace SmartTeethCare.Service.PatientModule
     {
         private readonly IUnitOfWork _uow;
         private readonly UserManager<User> _userManager;
+        private readonly INotificationService _notificationService;
 
-        public PatientAppointmentService(IUnitOfWork uow, UserManager<User> userManager)
+        public PatientAppointmentService(IUnitOfWork uow, UserManager<User> userManager , INotificationService notificationService)
         {
             _uow = uow;
             _userManager = userManager;
+            _notificationService = notificationService;
         }
 
         public async Task BookAppointment(BookAppointmentDto dto, ClaimsPrincipal user)
@@ -68,6 +72,21 @@ namespace SmartTeethCare.Service.PatientModule
             try
             {
                 await _uow.CompleteAsync();
+
+                await _notificationService.CreateAsync(
+                      patient.UserId,
+                      "Appointment Booked",
+                      $"Your appointment is on {appointment.Date}",
+                      true // email 
+                      );
+
+                BackgroundJob.Schedule(
+               () => _notificationService.CreateAsync(
+                      patient.UserId,
+                      "Reminder",
+                      "Your appointment is tomorrow",
+                      true),
+                       appointment.Date.AddDays(-1));
             }
             catch (Exception ex)
             {
@@ -104,7 +123,13 @@ namespace SmartTeethCare.Service.PatientModule
             if (target.Date <= DateTime.Now.AddHours(1))
                 throw new Exception("Cannot cancel appointment less than 1 hour before it starts.");
 
-            target.Status = AppointmentStatus.Cancelled; 
+            target.Status = AppointmentStatus.Cancelled;
+            await _notificationService.CreateAsync(
+                  patient.UserId,
+                  "Appointment Cancelled",
+                  $"Your appointment on {target.Date} has been cancelled.",
+                  true
+                   );
             await _uow.Repository<Appointment>().UpdateAsync(target);
             await _uow.CompleteAsync();
         }

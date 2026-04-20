@@ -13,6 +13,7 @@ using SmartTeethCare.Core.Interfaces.Services;
 using SmartTeethCare.Core.Interfaces.Services.AdminModule;
 using SmartTeethCare.Core.Interfaces.Services.DoctorModule;
 using SmartTeethCare.Core.Interfaces.Services.Lookup;
+using SmartTeethCare.Core.Interfaces.Services.NotificationService;
 using SmartTeethCare.Core.Interfaces.Services.PatientModule;
 using SmartTeethCare.Core.Interfaces.Services.SecurityModule;
 using SmartTeethCare.Core.Interfaces.UnitOfWork;
@@ -24,11 +25,14 @@ using SmartTeethCare.Service.AdminModule;
 using SmartTeethCare.Service.DoctorModule;
 using SmartTeethCare.Service.Implementation;
 using SmartTeethCare.Service.Lookup;
+using SmartTeethCare.Service.NotificationService;
 using SmartTeethCare.Service.PatientModule;
 using SmartTeethCare.Service.SecurityModule;
 using SmartTeethCare.Services.AppointmentModule;
 using SmartTeethCare.Web.Areas.Patient.Controllers;
 using System.Text;
+using Hangfire;
+
 
 namespace SmartTeethCare.API
 {
@@ -99,7 +103,10 @@ namespace SmartTeethCare.API
 
 			builder.Services.AddDbContext<ApplicationDbContext>(options =>
 					options.UseSqlServer(connectionString));
-            
+            builder.Services.AddHangfire(config =>config.UseSqlServerStorage(connectionString));
+
+            builder.Services.AddHangfireServer();
+
             builder.Services.AddIdentity<User, IdentityRole>()
                    .AddEntityFrameworkStores<ApplicationDbContext>()
                    .AddDefaultTokenProviders();
@@ -121,6 +128,7 @@ namespace SmartTeethCare.API
             builder.Services.AddScoped<IPrescriptionService, PrescriptionService>();
             builder.Services.AddScoped<IDoctorAppointmentService, DoctorAppointmentService>();
             builder.Services.AddScoped<IAdminDoctorService, AdminDoctorService>();
+            builder.Services.AddScoped<INotificationService, NotificationService>();
 
 
 
