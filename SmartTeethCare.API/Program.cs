@@ -32,6 +32,8 @@ using SmartTeethCare.Services.AppointmentModule;
 using SmartTeethCare.Web.Areas.Patient.Controllers;
 using System.Text;
 using Hangfire;
+using SmartTeethCare.Service.AiService;
+using SmartTeethCare.Core.Interfaces.Services.AiService;
 
 
 namespace SmartTeethCare.API
@@ -105,6 +107,8 @@ namespace SmartTeethCare.API
 					options.UseSqlServer(connectionString));
             builder.Services.AddHangfire(config =>config.UseSqlServerStorage(connectionString));
 
+            builder.Services.AddHttpClient();
+
             builder.Services.AddHangfireServer();
 
             builder.Services.AddIdentity<User, IdentityRole>()
@@ -129,6 +133,7 @@ namespace SmartTeethCare.API
             builder.Services.AddScoped<IDoctorAppointmentService, DoctorAppointmentService>();
             builder.Services.AddScoped<IAdminDoctorService, AdminDoctorService>();
             builder.Services.AddScoped<INotificationService, NotificationService>();
+            builder.Services.AddScoped<IAiService, AiService>();
 
 
 

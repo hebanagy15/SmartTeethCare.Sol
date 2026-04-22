@@ -11,6 +11,10 @@ namespace SmartTeethCare.Core.Entities
         public string Name { get; set; }
         public string Description { get; set; }
 
+        public string Disease { get; set; } = string.Empty;
+
+
+
         public ICollection<EducationalVideos> EducationalVideos { get; set; }
         public ICollection<Doctor> doctors { get; set; }
     }
