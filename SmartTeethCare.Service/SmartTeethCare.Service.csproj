@@ -19,4 +19,19 @@
 	<ItemGroup>
 	  <Folder Include="EmailTemplates\" />
 	</ItemGroup>
+
+	<ItemGroup>
+	  <None Update="EmailTemplates\AppointmentBooked.html">
+	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	  </None>
+	  <None Update="EmailTemplates\CancelAppointment.html">
+	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	  </None>
+	  <None Update="EmailTemplates\EmailConfirmation.html">
+	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	  </None>
+	  <None Update="EmailTemplates\ReminderEmail.html">
+	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	  </None>
+	</ItemGroup>
 </Project>

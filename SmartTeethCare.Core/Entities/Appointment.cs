@@ -13,7 +13,7 @@ namespace SmartTeethCare.Core.Entities
         public int DoctorID { get; set; }
         public int PatientID { get; set; }
         public int Amount { get; set; }
-        public DateTime CreatedAt { get; set; } = DateTime.Now;
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
         [JsonConverter(typeof(JsonStringEnumConverter))]
         public AppointmentStatus Status { get; set; }

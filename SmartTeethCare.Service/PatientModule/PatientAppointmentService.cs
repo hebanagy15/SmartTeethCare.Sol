@@ -72,21 +72,30 @@ namespace SmartTeethCare.Service.PatientModule
             try
             {
                 await _uow.CompleteAsync();
+                var doctor = await _uow.Repository<Doctor>().GetByIdAsync(dto.DentistId);
+                var doctorUser = await _userManager.FindByIdAsync(doctor.UserId);
+                var doctorName = doctorUser?.UserName ?? "Doctor";
 
                 await _notificationService.CreateAsync(
                       patient.UserId,
                       "Appointment Booked",
-                      $"Your appointment is on {appointment.Date}",
-                      true // email 
+                      "Your appointment is confirmed",
+                      true ,// email 
+                      new Dictionary<string, string>
+                      {
+                            { "DATE", appointment.Date.ToString("dd/MM/yyyy hh:mm tt") },
+                            { "DOCTOR", doctorName }
+                      }
                       );
 
-                BackgroundJob.Schedule(
-               () => _notificationService.CreateAsync(
-                      patient.UserId,
-                      "Reminder",
-                      "Your appointment is tomorrow",
-                      true),
-                       appointment.Date.AddDays(-1));
+                var reminderTime = appointment.Date.ToUniversalTime().AddHours(-3);
+
+                if (reminderTime > DateTime.UtcNow)
+                {
+                    BackgroundJob.Schedule<INotificationService>(
+                        x => x.SendReminderAsync(appointment.Id),
+                        reminderTime);
+                }
             }
             catch (Exception ex)
             {

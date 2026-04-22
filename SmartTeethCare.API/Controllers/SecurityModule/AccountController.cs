@@ -136,10 +136,14 @@ namespace SmartTeethCare.API.Controllers.SecurityModule
                 $"{baseUrl}/api/account/confirm-email?userId={user.Id}&token={encodedToken}";
 
             // 🔹 Send Email
-            await _emailService.SendEmailAsync(
+            await _emailService.SendTemplateEmailAsync(
                 user.Email,
                 "Confirm Your Email",
-                $"Please confirm your account by clicking <a href='{confirmationLink}'>here</a>"
+                "EmailConfirmation",
+                new Dictionary<string, string>
+                {
+                    { "CONFIRM_LINK", confirmationLink }
+                }
             );
 
             // 7) If Doctor → add to Doctors table

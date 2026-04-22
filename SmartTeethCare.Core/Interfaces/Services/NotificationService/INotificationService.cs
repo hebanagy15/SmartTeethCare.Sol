@@ -9,7 +9,8 @@ namespace SmartTeethCare.Core.Interfaces.Services.NotificationService
 {
     public interface INotificationService
     {
-        Task CreateAsync(string userId, string title, string message, bool sendEmail = false);
+        Task CreateAsync(string userId, string title, string message, bool sendEmail = false ,Dictionary<string, string>? data = null);
+        Task SendReminderAsync(int appointmentId);
 
         Task<IReadOnlyList<NotificationDto>> GetUserNotificationsAsync(string userId);
 
