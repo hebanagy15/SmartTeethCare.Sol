@@ -142,14 +142,13 @@ namespace SmartTeethCare.Service.SecurityModule
             var user = await _userManager.FindByEmailAsync(dto.Email);
 
             if (user == null)
-                return; // عشان security منقولش الإيميل موجود ولا لا
+                return; 
 
             var token = await _userManager.GeneratePasswordResetTokenAsync(user);
             var encodedToken = Uri.EscapeDataString(token);
 
-            var resetLink =
-                $"{_configuration["AppSettings:BaseUrl"]}/api/account/reset-password?email={user.Email}&token={encodedToken}";
-
+            var resetLink = 
+                $"https://dental-clinic-project-ten.vercel.app/reset-password?email={user.Email}&token={encodedToken}";
             await _emailService.SendTemplateEmailAsync(
             user.Email,
             "Reset Password",
