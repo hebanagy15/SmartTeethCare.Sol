@@ -150,19 +150,34 @@ namespace SmartTeethCare.Service.SecurityModule
             var resetLink =
                 $"{_configuration["AppSettings:BaseUrl"]}/api/account/reset-password?email={user.Email}&token={encodedToken}";
 
-            await _emailService.SendEmailAsync(
-                user.Email,
-                "Reset Password",
-                $"Click here to reset your password: <a href='{resetLink}'>Reset Password</a>");
+            await _emailService.SendTemplateEmailAsync(
+            user.Email,
+            "Reset Password",
+            "ResetPassword", // Template name without .html
+            new Dictionary<string, string>
+            {
+                { "RESET_LINK", resetLink },
+                { "USER_NAME", user.UserName }
+            });
+            Console.WriteLine(resetLink);
         }
 
         public async Task ResetPasswordAsync(ResetPasswordDTO dto)
         {
+            if (dto == null)
+                throw new ArgumentNullException(nameof(dto));
+
+            if (string.IsNullOrWhiteSpace(dto.Email) ||
+                string.IsNullOrWhiteSpace(dto.Token) ||
+                string.IsNullOrWhiteSpace(dto.NewPassword))
+                throw new Exception("Invalid request data.");
+
             var user = await _userManager.FindByEmailAsync(dto.Email);
 
             if (user == null)
                 throw new Exception("Invalid request.");
 
+            // Decode token safely
             var decodedToken = Uri.UnescapeDataString(dto.Token);
 
             var result = await _userManager.ResetPasswordAsync(
@@ -171,7 +186,10 @@ namespace SmartTeethCare.Service.SecurityModule
                 dto.NewPassword);
 
             if (!result.Succeeded)
-                throw new Exception("Password reset failed.");
+            {
+                var errors = string.Join(", ", result.Errors.Select(e => e.Description));
+                throw new Exception($"Password reset failed: {errors}");
+            }
         }
     }
 }
