@@ -13,6 +13,8 @@ namespace SmartTeethCare.Core.DTOs.AdminModule
 
         [Required]
         public DateTime Date { get; set; }
+        [Required]
+        public TimeSpan StartTime { get; set; }
 
         [Required]
         public int Amount { get; set; }

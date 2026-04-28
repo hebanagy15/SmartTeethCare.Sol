@@ -1,4 +1,5 @@
-﻿using SmartTeethCare.Core.DTOs.PatientModule;
+﻿using SmartTeethCare.Core.DTOs.DoctorModule;
+using SmartTeethCare.Core.DTOs.PatientModule;
 using SmartTeethCare.Core.Entities;
 using System.Security.Claims;
 

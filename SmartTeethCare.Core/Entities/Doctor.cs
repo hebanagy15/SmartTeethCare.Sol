@@ -27,7 +27,8 @@ namespace SmartTeethCare.Core.Entities
         [ForeignKey(nameof(SpecialtyID))]
         public Speciality? Speciality { get; set; }
 
-        public ICollection<Appointment> Appointments { get; set; }
+        public ICollection<DoctorSchedule> Schedules { get; set; } = new List<DoctorSchedule>();  // New 
+        public ICollection<Appointment> Appointments { get; set; } = new List<Appointment>();
 
     }
 } 

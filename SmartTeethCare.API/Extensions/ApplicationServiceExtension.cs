@@ -1,6 +1,5 @@
 ﻿using Hangfire;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.EntityFrameworkCore;
 using SmartTeethCare.Core.Entities;
 using SmartTeethCare.Core.Interfaces.Repositories;
 using SmartTeethCare.Core.Interfaces.Services;
@@ -57,6 +56,9 @@ namespace SmartTeethCare.API.Extensions
             services.AddScoped<IAdminDoctorService, AdminDoctorService>();
             services.AddScoped<INotificationService, NotificationService>();
             services.AddScoped<IAiService, AiService>();
+
+            services.AddScoped<IDoctorScheduleService, DoctorScheduleService>();
+            services.AddScoped<IAppointmentBookingService, AppointmentBookingService>();
             return services;
         }
     }

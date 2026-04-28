@@ -13,6 +13,8 @@ namespace SmartTeethCare.Core.DTOs.AdminModule
         public int DoctorID { get; set; }
         public int PatientID { get; set; }
         public DateTime Date { get; set; }
+        public TimeSpan StartTime { get; set; }       
+        public TimeSpan EndTime { get; set; }
         public int Amount { get; set; }
         public AppointmentStatus Status { get; set; }
         public AppointmentPaymentMethod PaymentMethod { get; set; }

@@ -1,6 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Mvc;
 using SmartTeethCare.Core.Interfaces.Services.DoctorModule;
 using System.Security.Claims;
 

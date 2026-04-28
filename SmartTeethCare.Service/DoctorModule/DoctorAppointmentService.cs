@@ -51,7 +51,7 @@ namespace SmartTeethCare.Service.DoctorModule
 
             if (date.HasValue)
                 appointments = appointments
-                    .Where(a => a.CreatedAt.Date == date.Value.Date)
+                    .Where(a => a.Date.Date == date.Value.Date)
                     .ToList();
 
             if (!string.IsNullOrEmpty(search))
@@ -69,7 +69,10 @@ namespace SmartTeethCare.Service.DoctorModule
                 AppointmentId = a.Id,
                 PatientName = a.patient?.User?.Email ?? "Unknown",
                 CreatedAt = a.CreatedAt,
-                Status = a.Status
+                Status = a.Status,
+                AppointmentDate = a.Date,               
+                StartTime = a.StartTime,               
+                EndTime = a.EndTime,
             }).ToList();
         }
 
@@ -114,8 +117,9 @@ namespace SmartTeethCare.Service.DoctorModule
 
             return new DoctorDashboardDto
             {
+                //replace CreatedAt with Date
                 TodayAppointments = appointments
-                    .Count(a => a.CreatedAt.Date == today),
+                    .Count(a => a.Date.Date == today),
 
                 PendingAppointments = appointments
                     .Count(a => a.Status == AppointmentStatus.Pending),

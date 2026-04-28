@@ -16,6 +16,8 @@ namespace SmartTeethCare.Core.DTOs.PatientModule
         public string PatientName { get; set; }
         public int Amount { get; set; }
         public DateTime Date { get; set; }
+        public TimeSpan StartTime { get; set; }        
+        public TimeSpan EndTime { get; set; }
         public DateTime CreatedAt { get; set; }
         public string Status { get; set; }
 

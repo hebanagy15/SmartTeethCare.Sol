@@ -15,6 +15,11 @@ namespace SmartTeethCare.Core.Entities
         public int Amount { get; set; }
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
+        // ---- الجديد ----
+        public DateTime Date { get; set; }               // يوم الكشف
+        public TimeSpan StartTime { get; set; }          // الساعة كام (16:00)
+        public TimeSpan EndTime { get; set; }            // بيخلص إمتى (16:15)
+
         [JsonConverter(typeof(JsonStringEnumConverter))]
         public AppointmentStatus Status { get; set; }
 
@@ -23,7 +28,6 @@ namespace SmartTeethCare.Core.Entities
 
         [JsonConverter(typeof(JsonStringEnumConverter))]
         public AppointmentPaymentStatus PaymentStatus { get; set; }
-        public DateTime Date { get; set; }
 
         public bool CreatedByAdmin { get; set; } = false;
 

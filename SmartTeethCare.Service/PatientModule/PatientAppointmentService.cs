@@ -1,9 +1,10 @@
 ﻿using Hangfire;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.EntityFrameworkCore;
+using SmartTeethCare.Core.DTOs.DoctorModule;
 using SmartTeethCare.Core.DTOs.PatientModule;
 using SmartTeethCare.Core.Entities;
 using SmartTeethCare.Core.Enums;
+using SmartTeethCare.Core.Interfaces.Services.DoctorModule;
 using SmartTeethCare.Core.Interfaces.Services.NotificationService;
 using SmartTeethCare.Core.Interfaces.Services.PatientModule;
 using SmartTeethCare.Core.Interfaces.UnitOfWork;
@@ -17,12 +18,15 @@ namespace SmartTeethCare.Service.PatientModule
         private readonly IUnitOfWork _uow;
         private readonly UserManager<User> _userManager;
         private readonly INotificationService _notificationService;
+        private readonly IAppointmentBookingService _bookingService;
 
-        public PatientAppointmentService(IUnitOfWork uow, UserManager<User> userManager , INotificationService notificationService)
+        public PatientAppointmentService(IUnitOfWork uow, UserManager<User> userManager, INotificationService notificationService, IAppointmentBookingService bookingService)
         {
             _uow = uow;
             _userManager = userManager;
             _notificationService = notificationService;
+            _bookingService = bookingService;
+
         }
 
         public async Task BookAppointment(BookAppointmentDto dto, ClaimsPrincipal user)
@@ -38,41 +42,17 @@ namespace SmartTeethCare.Service.PatientModule
                 throw new Exception("Patient not found");
 
             var patientId = patient.Id;
+            dto.PatientId = patient.Id;
+            dto.CreatedByAdmin = false;
 
-            // Avoid Duplication
-            var isAlreadyBooked = await _uow.Repository<Appointment>()
-                .AnyAsync(a => a.PatientID == patientId && a.DoctorID == dto.DentistId && a.Date == dto.AppointmentDate);
+            var result = await _bookingService.BookAppointmentAsync(dto);
 
-            if (isAlreadyBooked)
-                throw new Exception("You already booked this appointment");
-
-            // Check if doctor is busy (not cancelled)
-            var doctorBusy = await _uow.Repository<Appointment>()
-                .AnyAsync(a => a.DoctorID == dto.DentistId
-                               && a.Date == dto.AppointmentDate
-                               && a.Status != AppointmentStatus.Cancelled);
-
-            if (doctorBusy)
-                throw new Exception("Doctor is not available at this time");
-
-            var appointment = new Appointment
-            {
-                PatientID = patientId,
-                DoctorID = dto.DentistId,
-                Amount = 300,
-                Date = dto.AppointmentDate,
-                Status = AppointmentStatus.Pending,   
-                PaymentMethod = AppointmentPaymentMethod.Cash,
-                PaymentStatus = AppointmentPaymentStatus.Unpaid,
-                CreatedAt = DateTime.UtcNow
-            };
-
-            await _uow.Repository<Appointment>().AddAsync(appointment);
+            if (!result.Success)
+                throw new InvalidOperationException(result.Message);
 
             try
             {
-                await _uow.CompleteAsync();
-                var doctor = await _uow.Repository<Doctor>().GetByIdAsync(dto.DentistId);
+                var doctor = await _uow.Repository<Doctor>().GetByIdAsync(dto.DoctorId);
                 var doctorUser = await _userManager.FindByIdAsync(doctor.UserId);
                 var doctorName = doctorUser?.UserName ?? "Doctor";
 
@@ -80,20 +60,21 @@ namespace SmartTeethCare.Service.PatientModule
                       patient.UserId,
                       "Appointment Booked",
                       "Your appointment is confirmed",
-                      true ,// email 
+                      true,// email 
                       new Dictionary<string, string>
                       {
-                            { "DATE", appointment.Date.ToString("dd/MM/yyyy hh:mm tt") },
+                            { "DATE", dto.Date.ToString("dd/MM/yyyy hh:mm tt") },
                             { "DOCTOR", doctorName }
                       }
                       );
 
-                var reminderTime = appointment.Date.ToUniversalTime().AddHours(-3);
+                var appointmentDateTime = dto.Date.Date + dto.StartTime;
+                var reminderTime = appointmentDateTime.ToUniversalTime().AddHours(-3);
 
                 if (reminderTime > DateTime.UtcNow)
                 {
                     BackgroundJob.Schedule<INotificationService>(
-                        x => x.SendReminderAsync(appointment.Id),
+                        x => x.SendReminderAsync(result.AppointmentId.Value),
                         reminderTime);
                 }
             }
@@ -105,7 +86,7 @@ namespace SmartTeethCare.Service.PatientModule
 
         public async Task CancelAppointment(int appointmentId, ClaimsPrincipal user)
         {
-            var userId = user.FindFirstValue(ClaimTypes.NameIdentifier)?? throw new Exception("User not authenticated");
+            var userId = user.FindFirstValue(ClaimTypes.NameIdentifier) ?? throw new Exception("User not authenticated");
 
             var patients = await _uow.Repository<Patient>()
                 .FindAsync(p => p.UserId == userId);
@@ -210,12 +191,16 @@ namespace SmartTeethCare.Service.PatientModule
                 PatientId = appointment.PatientID,
                 PatientName = patientUser?.UserName ?? "Unknown",
                 Date = appointment.Date,
-                Status = appointment.Status.ToString(), 
+                StartTime = appointment.StartTime,       
+                EndTime = appointment.EndTime,           
+                Status = appointment.Status.ToString(),
                 Amount = appointment.Amount,
                 CreatedAt = appointment.CreatedAt
             };
 
             return dto;
         }
+
+         
     }
 }

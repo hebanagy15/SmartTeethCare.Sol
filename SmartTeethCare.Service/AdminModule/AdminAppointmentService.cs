@@ -1,9 +1,11 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using SmartTeethCare.Core.DTOs.AdminModule;
+using SmartTeethCare.Core.DTOs.DoctorModule;
 using SmartTeethCare.Core.DTOs.PatientModule;
 using SmartTeethCare.Core.Entities;
 using SmartTeethCare.Core.Enums;
 using SmartTeethCare.Core.Interfaces.Services.AdminModule;
+using SmartTeethCare.Core.Interfaces.Services.DoctorModule;
 using SmartTeethCare.Core.Interfaces.UnitOfWork;
 using System;
 using System.Collections.Generic;
@@ -15,36 +17,78 @@ namespace SmartTeethCare.Services.AppointmentModule
     public class AdminAppointmentService : IAdminAppointmentService
     {
         private readonly IUnitOfWork _unitOfWork;
+        private readonly IAppointmentBookingService _bookingService;
 
-        public AdminAppointmentService(IUnitOfWork unitOfWork)
+        public AdminAppointmentService(IUnitOfWork unitOfWork, IAppointmentBookingService bookingService)
         {
             _unitOfWork = unitOfWork;
+            _bookingService = bookingService;
         }
 
         // ---------------- Create ----------------
+        //public async Task<AppointmentResponseDTO> CreateAppointmentByAdminAsync(CreateAppointmentByAdminDTO dto)
+        //{
+        //    var doctor = await _unitOfWork.Repository<Doctor>().GetByIdAsync(dto.DoctorID);
+        //    if (doctor == null) throw new Exception("Doctor not found");
+
+        //    var patient = await _unitOfWork.Repository<Patient>().GetByIdAsync(dto.PatientID);
+        //    if (patient == null) throw new Exception("Patient not found");
+
+        //    var appointment = new Appointment
+        //    {
+        //        DoctorID = dto.DoctorID,
+        //        PatientID = dto.PatientID,
+        //        Date = dto.Date,
+        //        StartTime = dto.StartTime,                  
+        //        Amount = dto.Amount,
+        //        PaymentMethod = dto.PaymentMethod,
+        //        Status = AppointmentStatus.Pending,
+        //        PaymentStatus = dto.PaymentStatus,
+        //        CreatedByAdmin = true,
+        //        CreatedAt = DateTime.UtcNow
+        //    };
+
+        //    await _unitOfWork.Repository<Appointment>().AddAsync(appointment);
+        //    await _unitOfWork.CompleteAsync();
+
+        //    return new AppointmentResponseDTO
+        //    {
+        //        Id = appointment.Id,
+        //        DoctorID = appointment.DoctorID,
+        //        PatientID = appointment.PatientID,
+        //        Date = appointment.Date,
+        //        StartTime = appointment.StartTime,
+        //        EndTime = appointment.EndTime,
+        //        Amount = appointment.Amount,
+        //        Status = appointment.Status,
+        //        PaymentMethod = appointment.PaymentMethod,
+        //        PaymentStatus = appointment.PaymentStatus,
+        //        CreatedByAdmin = appointment.CreatedByAdmin,
+        //        CreatedAt = appointment.CreatedAt
+        //    };
+        //}
+
+
         public async Task<AppointmentResponseDTO> CreateAppointmentByAdminAsync(CreateAppointmentByAdminDTO dto)
         {
-            var doctor = await _unitOfWork.Repository<Doctor>().GetByIdAsync(dto.DoctorID);
-            if (doctor == null) throw new Exception("Doctor not found");
-
-            var patient = await _unitOfWork.Repository<Patient>().GetByIdAsync(dto.PatientID);
-            if (patient == null) throw new Exception("Patient not found");
-
-            var appointment = new Appointment
+            var bookingDto = new BookAppointmentDto
             {
-                DoctorID = dto.DoctorID,
-                PatientID = dto.PatientID,
+                DoctorId = dto.DoctorID,
+                PatientId = dto.PatientID,
                 Date = dto.Date,
+                StartTime = dto.StartTime,
                 Amount = dto.Amount,
-                PaymentMethod = dto.PaymentMethod,
-                Status = AppointmentStatus.Pending,
-                PaymentStatus = dto.PaymentStatus,
-                CreatedByAdmin = true,
-                CreatedAt = DateTime.UtcNow
+                PaymentMethod = dto.PaymentMethod.ToString(),
+                CreatedByAdmin = true
             };
 
-            await _unitOfWork.Repository<Appointment>().AddAsync(appointment);
-            await _unitOfWork.CompleteAsync();
+            var result = await _bookingService.BookAppointmentAsync(bookingDto);
+
+            if (!result.Success)
+                throw new InvalidOperationException(result.Message);
+
+            var appointment = await _unitOfWork.Repository<Appointment>()
+                .GetByIdAsync(result.AppointmentId.Value);
 
             return new AppointmentResponseDTO
             {
@@ -52,6 +96,8 @@ namespace SmartTeethCare.Services.AppointmentModule
                 DoctorID = appointment.DoctorID,
                 PatientID = appointment.PatientID,
                 Date = appointment.Date,
+                StartTime = appointment.StartTime,
+                EndTime = appointment.EndTime,
                 Amount = appointment.Amount,
                 Status = appointment.Status,
                 PaymentMethod = appointment.PaymentMethod,
@@ -78,6 +124,8 @@ namespace SmartTeethCare.Services.AppointmentModule
                 PatientName = a.patient.User.UserName,
                 Amount = a.Amount,
                 Date = a.Date,
+                StartTime = a.StartTime,
+                EndTime = a.EndTime,
                 CreatedAt = a.CreatedAt,
                 Status = a.Status.ToString()
             });
@@ -104,6 +152,8 @@ namespace SmartTeethCare.Services.AppointmentModule
                 PatientName = appointment.patient.User.UserName,
                 Amount = appointment.Amount,
                 Date = appointment.Date,
+                StartTime = appointment.StartTime,
+                EndTime = appointment.EndTime,
                 CreatedAt = appointment.CreatedAt,
                 Status = appointment.Status.ToString()
             };
