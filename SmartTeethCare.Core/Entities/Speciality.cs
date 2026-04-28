@@ -12,6 +12,7 @@ namespace SmartTeethCare.Core.Entities
         public string Description { get; set; }
 
         public string Disease { get; set; } = string.Empty;
+        public string? ImageUrl { get; set; }
 
 
 

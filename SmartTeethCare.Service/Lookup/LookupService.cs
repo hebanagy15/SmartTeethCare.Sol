@@ -50,8 +50,19 @@ namespace SmartTeethCare.Service.Lookup
 
         public async Task<IEnumerable<SpecializationDTO>> GetSpecializationsAsync()
         {
-            var specs = await _unitOfWork.Repository<Speciality>().GetAllAsync();
-            return specs.Select(s => new SpecializationDTO { Id = s.Id, Name = s.Name });
+            var specs = await _unitOfWork.Repository<Speciality>()
+                .Query()
+                .Include(s => s.doctors)
+                .ToListAsync();
+
+            return specs.Select(s => new SpecializationDTO
+            {
+                Id = s.Id,
+                Name = s.Name,
+                Description = s.Description,
+                ImageUrl = s.ImageUrl,
+                DoctorsCount = s.doctors?.Count ?? 0
+            });
         }
     }
 }

@@ -1,5 +1,6 @@
-using SmartTeethCare.API.Middlewares;
+using Microsoft.AspNetCore.StaticFiles;
 using SmartTeethCare.API.Extensions;
+using SmartTeethCare.API.Middlewares;
 
 namespace SmartTeethCare.API
 {
@@ -40,6 +41,7 @@ namespace SmartTeethCare.API
 
             app.UseStatusCodePagesWithRedirects("/errors/{0}"); // Handle Status Codes (404)
             app.UseHttpsRedirection();
+
             app.UseRouting();          
 
             app.UseCors("AllowFrontend"); // CORS

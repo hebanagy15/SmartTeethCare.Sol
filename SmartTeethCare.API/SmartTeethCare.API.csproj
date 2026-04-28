@@ -25,6 +25,7 @@
 
   <ItemGroup>
     <Folder Include="DTOs\PatientModule\" />
+    <Folder Include="wwwroot\images\specialities\" />
   </ItemGroup>
 
 </Project>
