@@ -99,15 +99,30 @@ namespace SmartTeethCare.Service.AdminModule
 
         public async Task UpdateDoctorAsync(int id, UpdateDoctorDto dto)
         {
-            var doctor = await _unitOfWork.Repository<Doctor>().GetByIdAsync(id);
-            if (doctor == null)
+            var doctor = await _unitOfWork.Repository<Doctor>()
+                .FindAsync(d => d.Id == id, include: q => q.Include(d => d.User));
+
+            var doctorEntity = doctor.FirstOrDefault();
+
+            if (doctorEntity == null)
                 throw new Exception("Doctor not found");
 
-            doctor.Salary = dto.Salary;
-            doctor.WorkingHours = dto.WorkingHours;
-            doctor.SpecialtyID = dto.SpecialityID;
+            // update doctor fields
+            doctorEntity.Salary = dto.Salary;
+            doctorEntity.WorkingHours = dto.WorkingHours;
+            doctorEntity.SpecialtyID = dto.SpecialityID;
 
-            await _unitOfWork.Repository<Doctor>().UpdateAsync(doctor);
+            // update user fields
+            if (!string.IsNullOrEmpty(dto.DisplayName))
+            {
+                doctorEntity.User.DisplayName = dto.DisplayName.StartsWith("Dr.")
+                    ? dto.DisplayName
+                    : $"Dr. {dto.DisplayName}";
+            }
+
+            await _unitOfWork.Repository<Doctor>().UpdateAsync(doctorEntity);
+
+            
             await _unitOfWork.CompleteAsync();
         }
 

@@ -14,6 +14,11 @@ namespace SmartTeethCare.Core.Entities
         public int WorkingHours { get; set; }
         public DateTime HiringDate { get; set; }
 
+        public string? ImageUrl { get; set; }
+        public decimal? ConsultationFee { get; set; }   
+        public int? YearsOfExperience { get; set; }     
+
+
         public string UserId { get; set; }
         public User User { get; set; }
         public ICollection<Prescription> Prescriptions { get; set; } = new List<Prescription>();

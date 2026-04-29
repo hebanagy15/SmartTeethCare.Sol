@@ -48,7 +48,7 @@ namespace SmartTeethCare.API
 
             app.UseStatusCodePagesWithRedirects("/errors/{0}"); // Handle Status Codes (404)
             app.UseHttpsRedirection();
-
+            app.UseStaticFiles();
             app.UseRouting();          
 
             app.UseCors("AllowFrontend"); // CORS

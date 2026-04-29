@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using SmartTeethCare.Repository.Data;
 
@@ -11,9 +12,11 @@ using SmartTeethCare.Repository.Data;
 namespace SmartTeethCare.Repository.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260428210235_addDisplayNameForUsers")]
+    partial class addDisplayNameForUsers
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -255,14 +258,8 @@ namespace SmartTeethCare.Repository.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<decimal?>("ConsultationFee")
-                        .HasColumnType("decimal(18,2)");
-
                     b.Property<DateTime>("HiringDate")
                         .HasColumnType("datetime2");
-
-                    b.Property<string>("ImageUrl")
-                        .HasColumnType("nvarchar(max)");
 
                     b.Property<int>("Salary")
                         .HasColumnType("int");
@@ -275,9 +272,6 @@ namespace SmartTeethCare.Repository.Migrations
                         .HasColumnType("nvarchar(450)");
 
                     b.Property<int>("WorkingHours")
-                        .HasColumnType("int");
-
-                    b.Property<int?>("YearsOfExperience")
                         .HasColumnType("int");
 
                     b.HasKey("Id");

@@ -40,9 +40,14 @@ namespace SmartTeethCare.Service.Lookup
             return doctors.Select(d => new DoctorDTO
             {
                 Id = d.Id,
-                Name = d.User?.UserName ?? "Unknown",
+                Name = d.User?.DisplayName ?? d.User?.UserName ?? "UnKnown",
                 SpecializationId = d.SpecialtyID,
-                SpecializationName = d.Speciality?.Name ?? "No Specialization"
+                SpecializationName = d.Speciality?.Name ?? "No Specialization",
+                ConsultationFee = d.ConsultationFee,
+                YearsOfExperience = d.YearsOfExperience,
+
+                ImageUrl = d.ImageUrl   
+
             });
         }
 
