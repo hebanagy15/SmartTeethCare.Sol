@@ -111,6 +111,9 @@ namespace SmartTeethCare.Service.AdminModule
             doctorEntity.Salary = dto.Salary;
             doctorEntity.WorkingHours = dto.WorkingHours;
             doctorEntity.SpecialtyID = dto.SpecialityID;
+            doctorEntity.ImageUrl = dto.ImageUrl;
+            doctorEntity.ConsultationFee = dto.ConsultationFee;
+            doctorEntity.YearsOfExperience = dto.YearsOfExperience;
 
             // update user fields
             if (!string.IsNullOrEmpty(dto.DisplayName))
