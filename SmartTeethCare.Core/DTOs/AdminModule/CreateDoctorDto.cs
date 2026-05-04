@@ -17,6 +17,8 @@ namespace SmartTeethCare.Core.DTOs.AdminModule
         public DateTime HiringDate { get; set; }
 
         public int? SpecialityID { get; set; }
+        public string Address { get; set; }
+        public string Gender { get; set; }
     }
 
 }

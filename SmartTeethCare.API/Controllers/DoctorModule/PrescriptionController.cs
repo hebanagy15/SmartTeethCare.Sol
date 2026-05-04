@@ -19,9 +19,15 @@ namespace SmartTeethCare.API.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> CreatePrescription(CreatePrescriptionDto dto)
+        public async Task<IActionResult> CreatePrescription([FromBody] CreatePrescriptionDto dto)
         {
+            if (dto == null)
+                return BadRequest("DTO is required");
+
             var doctorUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            if (string.IsNullOrEmpty(doctorUserId))
+                return Unauthorized();
 
             await _prescriptionService.CreatePrescriptionAsync(dto, doctorUserId);
 

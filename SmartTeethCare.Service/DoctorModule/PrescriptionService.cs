@@ -18,7 +18,14 @@ namespace SmartTeethCare.Service.Implementation
 
         public async Task CreatePrescriptionAsync(CreatePrescriptionDto dto, string doctorUserId)
         {
-            // 1️⃣ Get Appointment
+            // 1️⃣ Validate DTO
+            if (dto == null)
+                throw new Exception("DTO is null");
+
+            if (dto.Medicines == null || !dto.Medicines.Any())
+                throw new Exception("Medicines list is empty");
+
+            // 2️⃣ Get Appointment
             var appointment = await _unitOfWork
                 .Repository<Appointment>()
                 .GetByIdAsync(dto.AppointmentId);
@@ -26,7 +33,7 @@ namespace SmartTeethCare.Service.Implementation
             if (appointment == null)
                 throw new Exception("Appointment not found");
 
-            // 2️⃣ Get Doctor by UserId
+            // 3️⃣ Get Doctor
             var doctor = (await _unitOfWork
                 .Repository<Doctor>()
                 .FindAsync(d => d.UserId == doctorUserId))
@@ -35,11 +42,11 @@ namespace SmartTeethCare.Service.Implementation
             if (doctor == null)
                 throw new Exception("Doctor not found");
 
-            // 3️⃣ Validate ownership
+            // 4️⃣ Validate ownership
             if (appointment.DoctorID != doctor.Id)
                 throw new Exception("Unauthorized access");
 
-            // 4️⃣ Create Prescription
+            // 5️⃣ Create Prescription
             var prescription = new Prescription
             {
                 AppointmentId = appointment.Id,
@@ -50,11 +57,18 @@ namespace SmartTeethCare.Service.Implementation
 
             await _unitOfWork.Repository<Prescription>().AddAsync(prescription);
 
+         
+            await _unitOfWork.CompleteAsync();
+
+           
             foreach (var med in dto.Medicines)
             {
+                if (med.MedicineId <= 0)
+                    throw new Exception("Invalid MedicineId");
+
                 var prescriptionMedicine = new PrescriptionMedicine
                 {
-                    PrescriptionID = prescription.Id,
+                    PrescriptionID = prescription.Id, 
                     MedicineID = med.MedicineId,
                     Dosage = med.Dosage,
                     Frequency = med.Frequency,
@@ -68,10 +82,9 @@ namespace SmartTeethCare.Service.Implementation
                     .AddAsync(prescriptionMedicine);
             }
 
-
-
+            
+            await _unitOfWork.CompleteAsync();
         }
-
 
         public async Task<List<PrescriptionDetailsDTO>>
             GetPrescriptionsByPatientIdAsync(int patientId)
@@ -94,16 +107,16 @@ namespace SmartTeethCare.Service.Implementation
                 DoctorName = p.doctor.User.UserName,
                 PatientName = p.Patient.User.UserName,
                 Medicines = p.PrescriptionMedicines
-        .Select(pm => new PrescriptionMedicineDetailsDto
-        {
-            MedicineName = pm.Medicine.Name,
-            Dosage = pm.Dosage,
-            Frequency = pm.Frequency,
-            DurationInDays = pm.DurationInDays,
-            Quantity = pm.Quantity,
-            Instructions = pm.Instructions
-        })
-        .ToList()
+                    .Select(pm => new PrescriptionMedicineDetailsDto
+                    {
+                        MedicineName = pm.Medicine.Name,
+                        Dosage = pm.Dosage,
+                        Frequency = pm.Frequency,
+                        DurationInDays = pm.DurationInDays,
+                        Quantity = pm.Quantity,
+                        Instructions = pm.Instructions
+                    })
+                    .ToList()
             }).ToList();
         }
     }

@@ -3,13 +3,7 @@ using SmartTeethCare.Core.DTOs.AdminModule;
 using SmartTeethCare.Core.Entities;
 using SmartTeethCare.Core.Interfaces.Services.AdminModule;
 using SmartTeethCare.Core.Interfaces.UnitOfWork;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
-
 
 namespace SmartTeethCare.Service.AdminModule
 {
@@ -75,14 +69,27 @@ namespace SmartTeethCare.Service.AdminModule
             var user = new User
             {
                 UserName = dto.FullName,
-                Email = dto.Email
+                Email = dto.Email,
+                Address = dto.Address ?? "Not Provided",
+                Gender = dto.Gender ?? "Not Specified"
+
             };
 
             var result = await _userManager.CreateAsync(user, dto.Password);
-            if (!result.Succeeded)
-                throw new Exception("User creation failed");
 
-            await _userManager.AddToRoleAsync(user, "Doctor");
+            if (!result.Succeeded)
+            {
+                var errors = string.Join(", ", result.Errors.Select(e => e.Description));
+                throw new Exception(errors);
+            }
+
+           
+            var roleResult = await _userManager.AddToRoleAsync(user, "Doctor");
+            if (!roleResult.Succeeded)
+            {
+                var errors = string.Join(", ", roleResult.Errors.Select(e => e.Description));
+                throw new Exception(errors);
+            }
 
             var doctor = new Doctor
             {
@@ -107,7 +114,6 @@ namespace SmartTeethCare.Service.AdminModule
             if (doctorEntity == null)
                 throw new Exception("Doctor not found");
 
-            // update doctor fields
             doctorEntity.Salary = dto.Salary;
             doctorEntity.WorkingHours = dto.WorkingHours;
             doctorEntity.SpecialtyID = dto.SpecialityID;
@@ -115,7 +121,6 @@ namespace SmartTeethCare.Service.AdminModule
             doctorEntity.ConsultationFee = dto.ConsultationFee;
             doctorEntity.YearsOfExperience = dto.YearsOfExperience;
 
-            // update user fields
             if (!string.IsNullOrEmpty(dto.DisplayName))
             {
                 doctorEntity.User.DisplayName = dto.DisplayName.StartsWith("Dr.")
@@ -124,8 +129,6 @@ namespace SmartTeethCare.Service.AdminModule
             }
 
             await _unitOfWork.Repository<Doctor>().UpdateAsync(doctorEntity);
-
-            
             await _unitOfWork.CompleteAsync();
         }
 
@@ -148,12 +151,11 @@ namespace SmartTeethCare.Service.AdminModule
             var user = await _userManager.FindByIdAsync(doctor.UserId);
 
             if (user.LockoutEnd == null)
-                user.LockoutEnd = DateTimeOffset.MaxValue; // deactivate
+                user.LockoutEnd = DateTimeOffset.MaxValue;
             else
-                user.LockoutEnd = null; // activate
+                user.LockoutEnd = null;
 
             await _userManager.UpdateAsync(user);
         }
     }
-
 }
