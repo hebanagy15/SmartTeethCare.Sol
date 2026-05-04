@@ -10,6 +10,7 @@ using SmartTeethCare.Core.Interfaces.Services.Lookup;
 using SmartTeethCare.Core.Interfaces.Services.NotificationService;
 using SmartTeethCare.Core.Interfaces.Services.PatientModule;
 using SmartTeethCare.Core.Interfaces.Services.SecurityModule;
+using SmartTeethCare.Core.Interfaces.Services.Stripe;
 using SmartTeethCare.Core.Interfaces.UnitOfWork;
 using SmartTeethCare.Repository.Data;
 using SmartTeethCare.Repository.Implementation;
@@ -21,6 +22,7 @@ using SmartTeethCare.Service.Lookup;
 using SmartTeethCare.Service.NotificationService;
 using SmartTeethCare.Service.PatientModule;
 using SmartTeethCare.Service.SecurityModule;
+using SmartTeethCare.Service.Services.Stripe;
 using SmartTeethCare.Services.AppointmentModule;
 
 namespace SmartTeethCare.API.Extensions
@@ -59,6 +61,7 @@ namespace SmartTeethCare.API.Extensions
 
             services.AddScoped<IDoctorScheduleService, DoctorScheduleService>();
             services.AddScoped<IAppointmentBookingService, AppointmentBookingService>();
+            services.AddScoped<IPaymentService, PaymentService>();
             return services;
         }
     }
