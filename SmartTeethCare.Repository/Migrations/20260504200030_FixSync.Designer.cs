@@ -12,8 +12,8 @@ using SmartTeethCare.Repository.Data;
 namespace SmartTeethCare.Repository.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20260503235507_AddPaymentFieldsToAppointment")]
-    partial class AddPaymentFieldsToAppointment
+    [Migration("20260504200030_FixSync")]
+    partial class FixSync
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)

@@ -3,6 +3,7 @@ using SmartTeethCare.Core.Entities;
 using SmartTeethCare.Core.Enums;
 using SmartTeethCare.Core.Interfaces.Services.DoctorModule;
 using SmartTeethCare.Core.Interfaces.UnitOfWork;
+using Stripe;
 
 namespace SmartTeethCare.Service.DoctorModule
 {
@@ -93,7 +94,9 @@ namespace SmartTeethCare.Service.DoctorModule
                 Amount = dto.Amount,
                 Status = AppointmentStatus.Pending,
                 PaymentStatus = AppointmentPaymentStatus.Unpaid,
-                CreatedByAdmin = dto.CreatedByAdmin
+                CreatedByAdmin = dto.CreatedByAdmin,
+                 PaymentIntentId = dto.PaymentIntentId,
+                
             };
 
             await _unitOfWork.Repository<Appointment>().AddAsync(appointment);

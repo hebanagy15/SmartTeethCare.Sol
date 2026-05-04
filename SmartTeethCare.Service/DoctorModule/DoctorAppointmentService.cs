@@ -60,18 +60,26 @@ namespace SmartTeethCare.Service.DoctorModule
                     .Where(a =>
                         a.patient != null &&
                         a.patient.User != null &&
-                        a.patient.User.Email.Contains(search))
+                        (
+                            a.patient.User.DisplayName.Contains(search) ||
+                            a.patient.User.Email.Contains(search)
+                        ))
                     .ToList();
             }
 
             return appointments.Select(a => new DoctorAppointmentDto
             {
                 AppointmentId = a.Id,
-                PatientName = a.patient?.User?.Email ?? "Unknown",
+
+              
+                PatientName = a.patient?.User?.DisplayName
+                              ?? a.patient?.User?.Email
+                              ?? "Unknown",
+
                 CreatedAt = a.CreatedAt,
                 Status = a.Status,
-                AppointmentDate = a.Date,               
-                StartTime = a.StartTime,               
+                AppointmentDate = a.Date,
+                StartTime = a.StartTime,
                 EndTime = a.EndTime,
             }).ToList();
         }
@@ -117,7 +125,6 @@ namespace SmartTeethCare.Service.DoctorModule
 
             return new DoctorDashboardDto
             {
-                //replace CreatedAt with Date
                 TodayAppointments = appointments
                     .Count(a => a.Date.Date == today),
 
