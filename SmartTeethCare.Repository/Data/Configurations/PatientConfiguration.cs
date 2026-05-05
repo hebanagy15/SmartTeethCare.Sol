@@ -43,6 +43,13 @@ namespace SmartTeethCare.Repository.Configurations
                    .WithOne(r => r.Patient)
                    .HasForeignKey(r => r.PatientID)
                    .OnDelete(DeleteBehavior.Cascade);
+
+            builder.HasMany(p => p.MedicalRecords)
+                   .WithOne(m => m.Patient)
+                   .HasForeignKey(m => m.PatientId)
+                   .OnDelete(DeleteBehavior.Restrict);
+
+
         }
     }
 }

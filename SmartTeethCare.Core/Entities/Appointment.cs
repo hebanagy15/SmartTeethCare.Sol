@@ -31,6 +31,8 @@ namespace SmartTeethCare.Core.Entities
         public AppointmentPaymentStatus PaymentStatus { get; set; }
 
         public bool CreatedByAdmin { get; set; } = false;
+        public int? MedicalRecordId { get; set; }
+        public MedicalRecord? MedicalRecord { get; set; }
 
         public Doctor doctor { get; set; }
 

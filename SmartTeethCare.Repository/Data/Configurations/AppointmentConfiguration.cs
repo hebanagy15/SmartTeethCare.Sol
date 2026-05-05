@@ -32,6 +32,14 @@ namespace SmartTeethCare.Repository.Configurations
                    .WithOne("Appointment")
                    .HasForeignKey("AppointmentId")
                    .OnDelete(DeleteBehavior.Restrict);
+
+
+
+            builder.HasOne(a => a.MedicalRecord)
+                  .WithOne(m => m.Appointment)
+                  .HasForeignKey<MedicalRecord>(m => m.AppointmentId)
+                  .IsRequired(false)
+                  .OnDelete(DeleteBehavior.SetNull);
         }
     }
 }

@@ -33,6 +33,7 @@ public class ApplicationDbContext : IdentityDbContext<User>
 
     public DbSet<RefreshToken> RefreshTokens { get; set; }
     public DbSet<Notification> Notifications { get; set; }
+    public DbSet<MedicalRecord> MedicalRecords { get; set; }
 
 
 

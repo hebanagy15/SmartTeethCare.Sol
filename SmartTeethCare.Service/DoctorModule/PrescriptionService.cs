@@ -56,11 +56,8 @@ namespace SmartTeethCare.Service.Implementation
             };
 
             await _unitOfWork.Repository<Prescription>().AddAsync(prescription);
-
-         
             await _unitOfWork.CompleteAsync();
 
-           
             foreach (var med in dto.Medicines)
             {
                 if (med.MedicineId <= 0)
@@ -68,7 +65,7 @@ namespace SmartTeethCare.Service.Implementation
 
                 var prescriptionMedicine = new PrescriptionMedicine
                 {
-                    PrescriptionID = prescription.Id, 
+                    PrescriptionID = prescription.Id,
                     MedicineID = med.MedicineId,
                     Dosage = med.Dosage,
                     Frequency = med.Frequency,
@@ -82,7 +79,6 @@ namespace SmartTeethCare.Service.Implementation
                     .AddAsync(prescriptionMedicine);
             }
 
-            
             await _unitOfWork.CompleteAsync();
         }
 
@@ -104,8 +100,8 @@ namespace SmartTeethCare.Service.Implementation
             {
                 PrescriptionId = p.Id,
                 Date = p.Date,
-                DoctorName = p.doctor.User.UserName,
-                PatientName = p.Patient.User.UserName,
+                DoctorName = p.doctor.User.DisplayName ?? p.doctor.User.UserName,
+                PatientName = p.Patient.User.DisplayName ?? p.Patient.User.UserName,
                 Medicines = p.PrescriptionMedicines
                     .Select(pm => new PrescriptionMedicineDetailsDto
                     {

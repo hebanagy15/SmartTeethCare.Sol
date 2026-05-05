@@ -25,6 +25,7 @@ namespace SmartTeethCare.Core.Entities
         public ICollection<DentistQualifications> DentistQualifications { get; set; }
         public ICollection<Review> Reviews { get; set; } = new List<Review>();
         public ICollection<MedicalHistory> MedicalHistories { get; set; } = new List<MedicalHistory>();
+        public ICollection<MedicalRecord> MedicalRecords { get; set; } = new List<MedicalRecord>();
 
 
         public int? SpecialtyID { get; set; }
