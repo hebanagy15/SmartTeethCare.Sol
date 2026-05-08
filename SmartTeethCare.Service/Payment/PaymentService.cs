@@ -32,12 +32,23 @@ namespace SmartTeethCare.Service.Services.Stripe
                 throw new Exception("Appointment not found");
 
             if (appointment.PaymentStatus == AppointmentPaymentStatus.Paid)
-                throw new Exception("Already paid");
+                throw new Exception("Appointment already paid");
+
+        
+            long depositAmount = 50 * 100;
 
             var options = new PaymentIntentCreateOptions
             {
-                Amount = appointment.Amount * 100,
-                Currency = "usd",
+                Amount = depositAmount,
+
+            
+                Currency = "egp",
+
+                AutomaticPaymentMethods = new PaymentIntentAutomaticPaymentMethodsOptions
+                {
+                    Enabled = true
+                },
+
                 Metadata = new Dictionary<string, string>
                 {
                     { "appointmentId", appointment.Id.ToString() }
@@ -45,6 +56,7 @@ namespace SmartTeethCare.Service.Services.Stripe
             };
 
             var service = new PaymentIntentService();
+
             var paymentIntent = await service.CreateAsync(options);
 
             appointment.PaymentIntentId = paymentIntent.Id;

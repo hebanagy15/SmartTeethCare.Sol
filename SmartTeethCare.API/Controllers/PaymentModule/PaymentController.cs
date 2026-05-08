@@ -19,18 +19,33 @@ namespace SmartTeethCare.API.Controllers.PaymentModule
             _config = config;
         }
 
+        // =========================
+        // CREATE PAYMENT INTENT
+        // =========================
+        [Authorize]
         [HttpPost("create")]
         public async Task<IActionResult> CreatePayment([FromBody] CreatePaymentRequest request)
         {
+            if (request == null || request.AppointmentId <= 0)
+                return BadRequest("Invalid request");
+
             var response = await _paymentService.CreatePaymentIntent(request);
             return Ok(response);
         }
 
+        // =========================
+        // STRIPE WEBHOOK
+        // =========================
         [AllowAnonymous]
         [HttpPost("webhook")]
         public async Task<IActionResult> StripeWebhook()
         {
             var json = await new StreamReader(HttpContext.Request.Body).ReadToEndAsync();
+
+            var signature = Request.Headers["Stripe-Signature"].FirstOrDefault();
+
+            if (string.IsNullOrEmpty(signature))
+                return BadRequest("Missing Stripe Signature");
 
             Event stripeEvent;
 
@@ -38,7 +53,7 @@ namespace SmartTeethCare.API.Controllers.PaymentModule
             {
                 stripeEvent = EventUtility.ConstructEvent(
                     json,
-                    Request.Headers["Stripe-Signature"],
+                    signature,
                     _config["Stripe:WebhookSecret"]
                 );
             }
@@ -47,21 +62,35 @@ namespace SmartTeethCare.API.Controllers.PaymentModule
                 return BadRequest($"Webhook Error: {ex.Message}");
             }
 
-            switch (stripeEvent.Type)
+            // =========================
+            // PAYMENT SUCCESS
+            // =========================
+            if (stripeEvent.Type == "payment_intent.succeeded")
             {
-                case "payment_intent.succeeded":
-                    var paymentIntent = stripeEvent.Data.Object as PaymentIntent;
+                var paymentIntent = stripeEvent.Data.Object as PaymentIntent;
 
-                    if (paymentIntent?.Metadata?.TryGetValue("appointmentId", out var idStr) == true &&
-                        int.TryParse(idStr, out var appointmentId))
-                    {
-                        await _paymentService.HandlePaymentSuccess(appointmentId);
-                    }
-                    break;
+                if (paymentIntent == null)
+                    return BadRequest("PaymentIntent is null");
 
-                case "payment_intent.payment_failed":
-                  
-                    break;
+                if (paymentIntent.Metadata != null &&
+                    paymentIntent.Metadata.TryGetValue("appointmentId", out var idStr) &&
+                    int.TryParse(idStr, out var appointmentId))
+                {
+                    await _paymentService.HandlePaymentSuccess(appointmentId);
+                }
+            }
+
+            // =========================
+            // PAYMENT FAILED
+            // =========================
+            else if (stripeEvent.Type == "payment_intent.payment_failed")
+            {
+                var failedIntent = stripeEvent.Data.Object as PaymentIntent;
+
+                if (failedIntent != null)
+                {
+                    Console.WriteLine($"Payment Failed: {failedIntent.Id}");
+                }
             }
 
             return Ok();
