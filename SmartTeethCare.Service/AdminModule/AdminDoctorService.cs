@@ -31,7 +31,7 @@ namespace SmartTeethCare.Service.AdminModule
             {
                 Id = d.Id,
                 UserId = d.UserId,
-                FullName = d.User.UserName,
+                FullName = d.User.DisplayName ?? d.User.UserName,
                 Email = d.User.Email,
                 Salary = d.Salary,
                 WorkingHours = d.WorkingHours,
@@ -55,7 +55,7 @@ namespace SmartTeethCare.Service.AdminModule
             {
                 Id = doctor.Id,
                 UserId = doctor.UserId,
-                FullName = doctor.User.UserName,
+                FullName = doctor.User.DisplayName ?? doctor.User.UserName,
                 Email = doctor.User.Email,
                 Salary = doctor.Salary,
                 WorkingHours = doctor.WorkingHours,
@@ -68,11 +68,15 @@ namespace SmartTeethCare.Service.AdminModule
         {
             var user = new User
             {
-                UserName = dto.FullName,
+                UserName = dto.Email,
                 Email = dto.Email,
+
+                DisplayName = dto.FullName.StartsWith("Dr.")
+                    ? dto.FullName
+                    : $"Dr. {dto.FullName}",
+
                 Address = dto.Address ?? "Not Provided",
                 Gender = dto.Gender ?? "Not Specified"
-
             };
 
             var result = await _userManager.CreateAsync(user, dto.Password);
@@ -83,8 +87,8 @@ namespace SmartTeethCare.Service.AdminModule
                 throw new Exception(errors);
             }
 
-           
             var roleResult = await _userManager.AddToRoleAsync(user, "Doctor");
+
             if (!roleResult.Succeeded)
             {
                 var errors = string.Join(", ", roleResult.Errors.Select(e => e.Description));
@@ -107,7 +111,8 @@ namespace SmartTeethCare.Service.AdminModule
         public async Task UpdateDoctorAsync(int id, UpdateDoctorDto dto)
         {
             var doctor = await _unitOfWork.Repository<Doctor>()
-                .FindAsync(d => d.Id == id, include: q => q.Include(d => d.User));
+                .FindAsync(d => d.Id == id,
+                           include: q => q.Include(d => d.User));
 
             var doctorEntity = doctor.FirstOrDefault();
 
@@ -135,6 +140,7 @@ namespace SmartTeethCare.Service.AdminModule
         public async Task DeleteDoctorAsync(int id)
         {
             var doctor = await _unitOfWork.Repository<Doctor>().GetByIdAsync(id);
+
             if (doctor == null)
                 throw new Exception("Doctor not found");
 
@@ -145,6 +151,7 @@ namespace SmartTeethCare.Service.AdminModule
         public async Task ToggleDoctorStatusAsync(int id)
         {
             var doctor = await _unitOfWork.Repository<Doctor>().GetByIdAsync(id);
+
             if (doctor == null)
                 throw new Exception("Doctor not found");
 
