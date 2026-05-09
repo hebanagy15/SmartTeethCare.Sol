@@ -51,7 +51,6 @@ namespace SmartTeethCare.API.Extensions
             services.AddScoped<IPatientMedicalHistoryService, PatientMedicalHistoryService>();
             services.AddScoped<IPatientPrescriptionService, PatientPrescriptionService>();
             services.AddScoped<IPatientReviewService, PatientReviewService>();
-            services.AddScoped<IPatientProfileService, PatientProfileService>();
             services.AddScoped<IAdminPatientService, AdminPatientService>();
             services.AddScoped<IAdminAppointmentService, AdminAppointmentService>();
             services.AddScoped<IAdminSpecialityService, AdminSpecialityService>();
