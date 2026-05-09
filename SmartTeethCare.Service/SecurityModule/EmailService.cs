@@ -1,7 +1,8 @@
-﻿using Microsoft.Extensions.Configuration;
+﻿using MailKit.Net.Smtp;
+using MailKit.Security;
+using MimeKit;
+using Microsoft.Extensions.Configuration;
 using SmartTeethCare.Core.Interfaces.Services.SecurityModule;
-using System.Net;
-using System.Net.Mail;
 
 namespace SmartTeethCare.Service.SecurityModule
 {
@@ -14,44 +15,63 @@ namespace SmartTeethCare.Service.SecurityModule
             _config = config;
         }
 
-        
         public async Task SendEmailAsync(string toEmail, string subject, string body)
         {
-            var smtpClient = new SmtpClient(_config["EmailSettings:SmtpServer"])
+            var email = new MimeMessage();
+
+            email.From.Add(new MailboxAddress(
+                "SmartTeethCare",
+                _config["EmailSettings:SenderEmail"]));
+
+            email.To.Add(MailboxAddress.Parse(toEmail));
+            email.Subject = subject;
+
+            email.Body = new TextPart("html")
             {
-                Port = int.Parse(_config["EmailSettings:Port"]),
-                Credentials = new NetworkCredential(
-                    _config["EmailSettings:SenderEmail"],
-                    _config["EmailSettings:Password"]),
-                EnableSsl = true,
+                Text = body
             };
 
-            var mailMessage = new MailMessage
-            {
-                From = new MailAddress(_config["EmailSettings:SenderEmail"]),
-                Subject = subject,
-                Body = body,
-                IsBodyHtml = true
-            };
+            using var smtp = new SmtpClient();
 
-            mailMessage.To.Add(toEmail);
+            await smtp.ConnectAsync(
+                _config["EmailSettings:Host"],
+                int.Parse(_config["EmailSettings:Port"]),
+                SecureSocketOptions.StartTls);
 
-            await smtpClient.SendMailAsync(mailMessage);
+            await smtp.AuthenticateAsync(
+               _config["EmailSettings:SmtpLogin"],
+               _config["EmailSettings:Password"]);
+
+
+
+
+            await smtp.SendAsync(email);
+
+            await smtp.DisconnectAsync(true);
         }
 
-        
+        public async Task SendTemplateEmailAsync(
+            string toEmail,
+            string subject,
+            string templateName,
+            Dictionary<string, string> data)
+        {
+            var body = await GetTemplateAsync(templateName);
+            body = ReplacePlaceholders(body, data);
+
+            await SendEmailAsync(toEmail, subject, body);
+        }
+
         private async Task<string> GetTemplateAsync(string templateName)
         {
             var path = Path.Combine(
                 AppContext.BaseDirectory,
                 "EmailTemplates",
-                $"{templateName}.html"
-            );
+                $"{templateName}.html");
 
             return await File.ReadAllTextAsync(path);
         }
 
-        
         private string ReplacePlaceholders(string body, Dictionary<string, string> data)
         {
             foreach (var item in data)
@@ -60,20 +80,6 @@ namespace SmartTeethCare.Service.SecurityModule
             }
 
             return body;
-        }
-
-        
-        public async Task SendTemplateEmailAsync(
-            string toEmail,
-            string subject,
-            string templateName,
-            Dictionary<string, string> data)
-        {
-            var body = await GetTemplateAsync(templateName);
-
-            body = ReplacePlaceholders(body, data);
-
-            await SendEmailAsync(toEmail, subject, body);
         }
     }
 }

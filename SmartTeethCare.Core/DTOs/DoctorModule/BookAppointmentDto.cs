@@ -11,6 +11,6 @@ namespace SmartTeethCare.Core.DTOs.DoctorModule
         public int Amount { get; set; }
         public string PaymentMethod { get; set; }
         public bool CreatedByAdmin { get; set; } = false;
-        public string PaymentIntentId { get; set; }
+        //public string PaymentIntentId { get; set; }
     }
 }

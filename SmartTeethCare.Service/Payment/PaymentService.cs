@@ -59,7 +59,7 @@ namespace SmartTeethCare.Service.Services.Stripe
 
             var paymentIntent = await service.CreateAsync(options);
 
-            appointment.PaymentIntentId = paymentIntent.Id;
+            //appointment.PaymentIntentId = paymentIntent.Id;
             appointment.PaymentMethod = AppointmentPaymentMethod.Visa;
             appointment.PaymentStatus = AppointmentPaymentStatus.Pending;
 
