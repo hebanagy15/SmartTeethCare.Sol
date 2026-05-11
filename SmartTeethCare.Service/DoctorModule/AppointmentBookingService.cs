@@ -95,7 +95,7 @@ namespace SmartTeethCare.Service.DoctorModule
                 Status = AppointmentStatus.Pending,
                 PaymentStatus = AppointmentPaymentStatus.Unpaid,
                 CreatedByAdmin = dto.CreatedByAdmin,
-                 //PaymentIntentId = dto.PaymentIntentId,
+                PaymentIntentId = dto.PaymentIntentId,
                 
             };
 

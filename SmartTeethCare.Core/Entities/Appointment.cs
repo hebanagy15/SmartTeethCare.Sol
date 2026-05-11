@@ -19,7 +19,7 @@ namespace SmartTeethCare.Core.Entities
         public DateTime Date { get; set; }               // يوم الكشف
         public TimeSpan StartTime { get; set; }          // الساعة كام (16:00)
         public TimeSpan EndTime { get; set; }            // بيخلص إمتى (16:15)
-        //public string? PaymentIntentId { get; set; }
+        public string? PaymentIntentId { get; set; }              // لحفظ معرف الدفع من Stripe
 
         [JsonConverter(typeof(JsonStringEnumConverter))]
         public AppointmentStatus Status { get; set; }
