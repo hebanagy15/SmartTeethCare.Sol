@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http.Json;
 using System.Text;
+using System.Text.Json;
 using System.Threading.Tasks;
 
 namespace SmartTeethCare.Service.AiService
@@ -31,7 +32,13 @@ namespace SmartTeethCare.Service.AiService
             var response = await _httpClient.PostAsync("/predict", content);
             response.EnsureSuccessStatusCode();
 
-            return await response.Content.ReadFromJsonAsync<PredictResponseDto>();
+            var json = await response.Content.ReadAsStringAsync();
+
+            return JsonSerializer.Deserialize<PredictResponseDto>(json,
+                new JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true
+                });
         }
 
         public async Task<string> ChatAsync(string disease, string message)

@@ -28,36 +28,73 @@ namespace SmartTeethCare.API.Controllers.AiService
             if (!result.Is_Teeth)
                 return BadRequest("The image is unclear or does not seem to be a valid teeth image. Please upload a clearer one.");
 
-            // top disease = top Confidence
-            var topDisease = result.Predictions
-                .OrderByDescending(p => p.Confidence)
-                .FirstOrDefault()?.Disease;
-
-            var speciality = (await _unitOfWork.Repository<Speciality>().FindAsync(s => s.Disease == topDisease)).FirstOrDefault();
-            if (speciality == null)
-            {
-                return NotFound("No speciality found for this disease");
-            }
-            var doctors = await _unitOfWork.Repository<Doctor>().FindAsync(d => d.SpecialtyID == speciality.Id,include: q => q.Include(d => d.User));
-            if (doctors == null || !doctors.Any())
-            {
-                return Ok(new
+            // 1️⃣ تحويل الـ Dictionary إلى List منظمة
+            var predictions = result.Predictions
+                .Select(p => new
                 {
-                    Disease = topDisease,
-                    Message = "No doctors available for this speciality"
-                });
-            }
-            var doctor = doctors.OrderBy(d => Guid.NewGuid()).FirstOrDefault();
+                    Disease = p.Key,
+                    Confidence = float.Parse(p.Value.Replace("%", ""))
+                })
+                .ToList();
+
+            // 2️⃣ أعلى مرض
+            var top = predictions
+                .OrderByDescending(p => p.Confidence)
+                .First();
+
+            // 3️⃣ تحميل كل الـ specialities مرة واحدة (أفضل أداء)
+            var allSpecialities = await _unitOfWork
+                .Repository<Speciality>()
+                .GetAllAsync();
+
+            // 4️⃣ تخصص المرض الأعلى
+            var speciality = allSpecialities
+                .FirstOrDefault(s => s.Disease == top.Disease);
+
+            // 5️⃣ اختيار دكتور عشوائي للتخصص
+            var doctors = await _unitOfWork.Repository<Doctor>()
+                .FindAsync(d => d.SpecialtyID == speciality.Id,
+                    include: q => q.Include(d => d.User));
+
+            var doctor = doctors?
+                .OrderBy(d => Guid.NewGuid())
+                .FirstOrDefault();
+
+            // 6️⃣ باقي الأمراض (غير top)
+            var others = predictions
+                .Where(p => p.Disease != top.Disease)
+                .Select(p =>
+                {
+                    var spec = allSpecialities
+                        .FirstOrDefault(s => s.Disease == p.Disease);
+
+                    return new
+                    {
+                        Disease = p.Disease,
+                        Confidence = p.Confidence,
+                        Speciality = spec?.Name
+                    };
+                })
+                .ToList();
+
+            // 7️⃣ Response النهائي
             return Ok(new
             {
-                Disease = topDisease,
-                Predictions = result.Predictions,
-                Disclaimer = result.Disclaimer,
-                Speciality = speciality.Name,
-                DoctorName = doctor?.User?.UserName
+                TopDisease = new
+                {
+                    Disease = top.Disease,
+                    Confidence = top.Confidence,
+                    Speciality = speciality?.Name ?? "No speciality available",
+                    DoctorName = doctor?.User?.DisplayName
+                            ?? doctor?.User?.UserName
+                            ?? "No doctor available"
+                },
+
+                OtherPredictions = others,
+
+                Disclaimer = result.Disclaimer
             });
         }
-
         [HttpPost("chat")]
         public async Task<IActionResult> Chat(ChatRequestDto dto)
         {

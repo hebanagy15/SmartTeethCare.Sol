@@ -9,6 +9,6 @@ namespace SmartTeethCare.Core.DTOs.AI_Services
     public class PredictionDto
     {
         public string Disease { get; set; }                   // caries
-        public float Confidence { get; set; }                 // 0.85
+        public string Confidence { get; set; }                 // 0.85
     }
 }
