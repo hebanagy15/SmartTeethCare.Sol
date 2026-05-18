@@ -1,8 +1,11 @@
-﻿using Microsoft.Extensions.Configuration;
+﻿using Hangfire;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.Extensions.Configuration;
 using SmartTeethCare.Core.DTOs.Payment;
 using SmartTeethCare.Core.DTOs.Stripe;
 using SmartTeethCare.Core.Entities;
 using SmartTeethCare.Core.Enums;
+using SmartTeethCare.Core.Interfaces.Services.NotificationService;
 using SmartTeethCare.Core.Interfaces.Services.Stripe;
 using SmartTeethCare.Core.Interfaces.UnitOfWork;
 using Stripe;
@@ -13,11 +16,15 @@ namespace SmartTeethCare.Service.Services.Stripe
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly IConfiguration _config;
+        private readonly INotificationService _notificationService;
+        private readonly UserManager<User> _userManager;
 
-        public PaymentService(IUnitOfWork unitOfWork, IConfiguration config)
+        public PaymentService(IUnitOfWork unitOfWork, IConfiguration config , INotificationService notificationService , UserManager<User> userManager)
         {
             _unitOfWork = unitOfWork;
             _config = config;
+            _notificationService = notificationService;
+            _userManager = userManager;
 
             StripeConfiguration.ApiKey = _config["Stripe:SecretKey"];
         }
@@ -59,7 +66,7 @@ namespace SmartTeethCare.Service.Services.Stripe
 
             var paymentIntent = await service.CreateAsync(options);
 
-            //appointment.PaymentIntentId = paymentIntent.Id;
+            appointment.PaymentIntentId = paymentIntent.Id;
             appointment.PaymentMethod = AppointmentPaymentMethod.Visa;
             appointment.PaymentStatus = AppointmentPaymentStatus.Pending;
 
@@ -89,6 +96,53 @@ namespace SmartTeethCare.Service.Services.Stripe
 
             await repo.UpdateAsync(appointment);
             await _unitOfWork.CompleteAsync();
+
+            // 👇 هات الدكتور
+            var doctor = await _unitOfWork.Repository<Doctor>()
+                .GetByIdAsync(appointment.DoctorID);
+
+            var doctorUser = doctor != null
+                ? await _userManager.FindByIdAsync(doctor.UserId)
+                : null;
+
+            var doctorName = doctorUser?.DisplayName
+                ?? doctorUser?.UserName
+                ?? "Doctor";
+
+            var userId = appointment.patient?.UserId
+                ?? throw new Exception("Patient not found");
+
+            try
+            {
+                // 📩 Notification / Email
+                await _notificationService.CreateAsync(
+                    userId,
+                    "Appointment Confirmed",
+                    "Your appointment is confirmed after payment",
+                    true,
+                    new Dictionary<string, string>
+                    {
+                { "DATE", appointment.Date.ToString("dd/MM/yyyy hh:mm tt") },
+                { "DOCTOR", doctorName }
+                    }
+                );
+
+                // ⏰ Reminder scheduling
+                var appointmentDateTime = appointment.Date.Date + appointment.StartTime;
+                var reminderTime = appointmentDateTime.ToUniversalTime().AddHours(-3);
+
+                if (reminderTime > DateTime.UtcNow)
+                {
+                    BackgroundJob.Schedule<INotificationService>(
+                        x => x.SendReminderAsync(appointment.Id),
+                        reminderTime
+                    );
+                }
+            }
+            catch
+            {
+                // log error only
+            }
         }
     }
 }

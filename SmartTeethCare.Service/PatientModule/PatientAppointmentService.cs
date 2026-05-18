@@ -54,29 +54,29 @@ namespace SmartTeethCare.Service.PatientModule
             {
                 var doctor = await _uow.Repository<Doctor>().GetByIdAsync(dto.DoctorId);
                 var doctorUser = await _userManager.FindByIdAsync(doctor.UserId);
-                var doctorName = doctorUser?.UserName ?? "Doctor";
+                var doctorName = doctorUser?.DisplayName ?? doctorUser?.UserName ?? "Doctor";
 
-                await _notificationService.CreateAsync(
-                      patient.UserId,
-                      "Appointment Booked",
-                      "Your appointment is confirmed",
-                      true,// email 
-                      new Dictionary<string, string>
-                      {
-                            { "DATE", dto.Date.ToString("dd/MM/yyyy hh:mm tt") },
-                            { "DOCTOR", doctorName }
-                      }
-                      );
+                //await _notificationService.CreateAsync(
+                //      patient.UserId,
+                //      "Appointment Booked",
+                //      "Your appointment is confirmed",
+                //      true,// email 
+                //      new Dictionary<string, string>
+                //      {
+                //            { "DATE", dto.Date.ToString("dd/MM/yyyy hh:mm tt") },
+                //            { "DOCTOR", doctorName }
+                //      }
+                //      );
 
-                var appointmentDateTime = dto.Date.Date + dto.StartTime;
-                var reminderTime = appointmentDateTime.ToUniversalTime().AddHours(-3);
+                //var appointmentDateTime = dto.Date.Date + dto.StartTime;
+                //var reminderTime = appointmentDateTime.ToUniversalTime().AddHours(-3);
 
-                if (reminderTime > DateTime.UtcNow)
-                {
-                    BackgroundJob.Schedule<INotificationService>(
-                        x => x.SendReminderAsync(result.AppointmentId.Value),
-                        reminderTime);
-                }
+                //if (reminderTime > DateTime.UtcNow)
+                //{
+                //    BackgroundJob.Schedule<INotificationService>(
+                //        x => x.SendReminderAsync(result.AppointmentId.Value),
+                //        reminderTime);
+                //}
             }
             catch (Exception ex)
             {
