@@ -2,6 +2,7 @@
 using Microsoft.EntityFrameworkCore.Query;
 using SmartTeethCare.Core.Entities;
 using SmartTeethCare.Core.Interfaces.Repositories;
+using SmartTeethCare.Core.Interfaces.UnitOfWork;
 using SmartTeethCare.Repository.Data;
 using System.Linq.Expressions;
 
@@ -20,6 +21,8 @@ namespace SmartTeethCare.Repository.Implementation
         {
             await _dbContext.Set<T>().AddAsync(entity);
             await Task.CompletedTask;
+            
+
 
         }
 

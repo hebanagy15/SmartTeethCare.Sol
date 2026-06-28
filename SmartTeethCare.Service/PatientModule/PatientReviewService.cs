@@ -72,6 +72,8 @@ namespace SmartTeethCare.Service.PatientModule
             };
 
             await _unitOfWork.Repository<Review>().AddAsync(review);
+            await _unitOfWork.CompleteAsync();
+
         }
         public async Task UpdateReviewAsync(int reviewId, UpdateReviewDTO dto, ClaimsPrincipal user)
         {
@@ -112,6 +114,7 @@ namespace SmartTeethCare.Service.PatientModule
             review.UpdatedAt = DateTime.UtcNow;
 
             await _unitOfWork.Repository<Review>().UpdateAsync(review);
+            await _unitOfWork.CompleteAsync();
         }
 
         public async Task DeleteReviewAsync(int reviewId, ClaimsPrincipal user)
@@ -138,6 +141,8 @@ namespace SmartTeethCare.Service.PatientModule
 
 
             await _unitOfWork.Repository<Review>().DeleteAsync(review);
+            await _unitOfWork.CompleteAsync();
+
         }
         public async Task<IEnumerable<ReviewViewDTO>> GetMyReviewsAsync(ClaimsPrincipal user)
         {
@@ -165,7 +170,7 @@ namespace SmartTeethCare.Service.PatientModule
             {
                 Id = r.Id,
                 DoctorId = r.DentistID,
-                DoctorName = r.doctor?.User?.UserName ?? "Unknown Doctor",
+                DoctorName = r.doctor?.User?.DisplayName ?? "Unknown Doctor",
                 Rating = r.Rating,
                 Comment = r.Comment,
                 CreatedAt = r.CreatedAt
@@ -197,7 +202,7 @@ namespace SmartTeethCare.Service.PatientModule
             {
                 Id = r.Id,
                 DoctorId = r.DentistID,
-                DoctorName = r.doctor?.User?.UserName ?? "Unknown Doctor",
+                DoctorName = r.doctor?.User?.DisplayName ?? "Unknown Doctor",
                 Rating = r.Rating,
                 Comment = r.Comment,
                 CreatedAt = r.CreatedAt
