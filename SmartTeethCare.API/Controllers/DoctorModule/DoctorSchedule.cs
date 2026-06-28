@@ -4,74 +4,110 @@ using SmartTeethCare.API.Errors;
 using SmartTeethCare.Core.DTOs.DoctorModule;
 using SmartTeethCare.Core.Entities;
 using SmartTeethCare.Core.Interfaces.Services.DoctorModule;
+using SmartTeethCare.Core.Interfaces.UnitOfWork;
 using System.Security.Claims;
 
-namespace SmartTeethCare.API.Controllers.DoctorModule
+[ApiController]
+[Route("api/[controller]")]
+public class DoctorScheduleController : ControllerBase
 {
-    [ApiController]
-    [Route("api/[controller]")]
-    public class DoctorScheduleController : ControllerBase
+    private readonly IDoctorScheduleService _scheduleService;
+    private readonly IUnitOfWork _uow;
+
+    public DoctorScheduleController(IDoctorScheduleService scheduleService, IUnitOfWork uow)
     {
-        private readonly IDoctorScheduleService _scheduleService;
+        _scheduleService = scheduleService;
+        _uow = uow;
+    }
 
-        public DoctorScheduleController(IDoctorScheduleService scheduleService)
+    // GET api/DoctorSchedule?doctorId=5
+    [HttpGet]
+    public async Task<IActionResult> GetDoctorSchedule([FromQuery] int? doctorId = null)
+    {
+        int resolvedDoctorId;
+
+        if (doctorId.HasValue && doctorId.Value > 0)
         {
-            _scheduleService = scheduleService;
+            // Called by patient/booking — use the supplied ID directly
+            resolvedDoctorId = doctorId.Value;
+        }
+        else
+        {
+            // Called by the logged-in doctor — resolve from JWT
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(userId))
+                return Unauthorized(new ApiResponse(401, "User not authenticated"));
+
+            var doctors = await _uow.Repository<Doctor>().FindAsync(d => d.UserId == userId);
+            var doctor = doctors.FirstOrDefault();
+            if (doctor == null)
+                return NotFound(new ApiResponse(404, "Doctor not found"));
+
+            resolvedDoctorId = doctor.Id;
         }
 
-        // GET api/doctorschedule/5
-        [HttpGet("{doctorId}")]
-        public async Task<IActionResult> GetDoctorSchedule(int doctorId)
+        var schedule = await _scheduleService.GetDoctorScheduleAsync(resolvedDoctorId);
+        if (!schedule.Any())
+            return NotFound(new ApiResponse(404, "No schedule found for this doctor"));
+
+        return Ok(schedule);
+    }
+
+    // GET api/DoctorSchedule/available-slots?date=2025-07-15&doctorId=5
+    [HttpGet("available-slots")]
+    public async Task<IActionResult> GetAvailableSlots([FromQuery] DateTime date, [FromQuery] int? doctorId = null)
+    {
+        int resolvedDoctorId;
+
+        if (doctorId.HasValue && doctorId.Value > 0)
         {
-            var schedule = await _scheduleService.GetDoctorScheduleAsync(doctorId);
+            // Called by patient/booking — use the supplied ID directly
+            resolvedDoctorId = doctorId.Value;
+        }
+        else
+        {
+            // Called by the logged-in doctor — resolve from JWT
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(userId))
+                return Unauthorized(new ApiResponse(401, "User not authenticated"));
 
-            if (!schedule.Any())
-                return NotFound(new ApiResponse(404, "No schedule found for this doctor"));
+            var doctors = await _uow.Repository<Doctor>().FindAsync(d => d.UserId == userId);
+            var doctor = doctors.FirstOrDefault();
+            if (doctor == null)
+                return NotFound(new ApiResponse(404, "Doctor not found"));
 
-            return Ok(schedule);
+            resolvedDoctorId = doctor.Id;
         }
 
-        // GET api/doctorschedule/5/available-slots?date=2025-07-15
-        [HttpGet("{doctorId}/available-slots")]
-        public async Task<IActionResult> GetAvailableSlots(int doctorId, [FromQuery] DateTime date)
+        var slots = await _scheduleService.GetAvailableSlotsAsync(resolvedDoctorId, date);
+        if (!slots.Any())
+            return NotFound(new ApiResponse(404, "No schedule found for this date"));
+
+        return Ok(slots);
+    }
+
+    // POST api/DoctorSchedule
+    [Authorize(Roles = "Admin, Doctor")]
+    [HttpPost]
+    public async Task<IActionResult> AddSchedule([FromBody] CreateDoctorScheduleDto dto)
+    {
+        if (User.IsInRole("Doctor"))
         {
-            var slots = await _scheduleService.GetAvailableSlotsAsync(doctorId, date);
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userId))
+                return Unauthorized("Invalid token");
 
-            if (!slots.Any())
-                return NotFound(new ApiResponse(404, "No schedule found for this date"));
+            var doctorId = await _scheduleService.GetDoctorIdByUserIdAsync(userId);
+            if (doctorId == null)
+                return NotFound(new ApiResponse(404, "Doctor profile not found"));
 
-            return Ok(slots);
+            dto.DoctorId = doctorId.Value;
         }
 
-        // POST api/doctorschedule
-        [Authorize(Roles = "Admin, Doctor")]
-        [HttpPost]
-        public async Task<IActionResult> AddSchedule([FromBody] CreateDoctorScheduleDto dto)
-        {
-            // If Doctor — get DoctorId from JWT Token via Service
-            if (User.IsInRole("Doctor"))
-            {
-                var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (User.IsInRole("Admin") && dto.DoctorId <= 0)
+            return BadRequest(new ApiResponse(400, "DoctorId is required for Admin"));
 
-                if (string.IsNullOrEmpty(userId))
-                    return Unauthorized("Invalid token");
-
-                // ✅ Ask the Service (not UnitOfWork directly!)
-                var doctorId = await _scheduleService.GetDoctorIdByUserIdAsync(userId);
-
-                if (doctorId == null)
-                    return NotFound(new ApiResponse(404, "Doctor profile not found"));
-
-                // Override DoctorId — Doctor cannot set another doctor's schedule
-                dto.DoctorId = doctorId.Value;
-            }
-
-            // If Admin — DoctorId must be provided in the request body
-            if (User.IsInRole("Admin") && dto.DoctorId <= 0)
-                return BadRequest(new ApiResponse(400, "DoctorId is required for Admin"));
-
-            await _scheduleService.AddScheduleAsync(dto);
-            return Ok(new { message = "Schedule added successfully" });
-        }
+        await _scheduleService.AddScheduleAsync(dto);
+        return Ok(new { message = "Schedule added successfully" });
     }
 }

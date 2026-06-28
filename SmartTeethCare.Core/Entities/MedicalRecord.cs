@@ -14,8 +14,8 @@ namespace SmartTeethCare.Core.Entities
         public int DoctorId { get; set; }
         public Doctor Doctor { get; set; }
 
-        public int? AppointmentId { get; set; }   // optional
-        public Appointment? Appointment { get; set; }
+        public int AppointmentId { get; set; }   
+        public Appointment Appointment { get; set; }
 
         public string Diagnosis { get; set; }
         public string? Notes { get; set; }

@@ -1,6 +1,8 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using SmartTeethCare.Core.DTOs.MedicalRecordModule;
 using SmartTeethCare.Core.Interfaces.Services.MedicalRecordModule;
+using System.Security.Claims;
 
 namespace SmartTeethCare.API.Controllers.MedicalRecord
 {
@@ -15,24 +17,48 @@ namespace SmartTeethCare.API.Controllers.MedicalRecord
             _service = service;
         }
 
-        [HttpPost]
+        [Authorize(Roles = "Doctor")]
+        [HttpPost("create")]
         public async Task<IActionResult> Create(CreateMedicalRecordDto dto)
         {
-            await _service.AddAsync(dto);
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier)
+                 ?? throw new Exception("User not authenticated");
+            await _service.AddAsync(dto, userId);
+
             return Ok("Medical record created");
         }
 
-        [HttpGet("patient/{patientId}")]
-        public async Task<IActionResult> GetByPatient(int patientId)
+        [Authorize(Roles = "Patient")]
+        [HttpGet("my-records")]
+        public async Task<IActionResult> GetMyMedicalRecords()
         {
-            var result = await _service.GetByPatientId(patientId);
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier)
+                         ?? throw new Exception("User not authenticated");
+
+            var result = await _service.GetMyMedicalRecords(userId);
+
             return Ok(result);
         }
 
-        [HttpGet("{id}")]
-        public async Task<IActionResult> GetById(int id)
+        [Authorize(Roles = "Doctor")]
+        [HttpGet("my-created-medical-records")]
+        public async Task<IActionResult> GetMyCreatedMedicalRecords()
         {
-            var result = await _service.GetById(id);
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier)
+                         ?? throw new Exception("User not authenticated");
+
+            var result = await _service.GetMyCreatedMedicalRecords(userId);
+
+            return Ok(result);
+        }
+
+
+        [HttpGet("details/{id}")]
+        public async Task<IActionResult> GetMedicalRecordsDetails(int id)
+        {
+            var result = await _service.GetDetailsAsync(id);
+            if (result == null)
+                return NotFound("Medical record not found.");
             return Ok(result);
         }
     }
