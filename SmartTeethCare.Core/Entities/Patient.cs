@@ -8,6 +8,7 @@ namespace SmartTeethCare.Core.Entities
 {
     public class Patient : BaseEntity
     {
+        public string? ProfileImageUrl { get; set; }
         public string MedicalHistory { get; set; }
         public string UserId { get; set; }
         public User User { get; set; }

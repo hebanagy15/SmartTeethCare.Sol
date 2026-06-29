@@ -32,17 +32,16 @@ namespace SmartTeethCare.API.Controllers.PatientModule
 
             return Ok(result);
         }
+       
         [HttpPut]
-        public async Task<IActionResult> UpdateProfile([FromBody] UpdatePatientProfileDto dto)
+        public async Task<IActionResult> UpdateProfile([FromForm] UpdatePatientProfileDto dto)
         {
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
 
             if (string.IsNullOrEmpty(userId))
                 return Unauthorized();
 
-            await _patientProfileService.UpdateProfileAsync(
-                userId,
-                dto);
+            await _patientProfileService.UpdateProfileAsync(userId, dto);
 
             return Ok(new
             {
