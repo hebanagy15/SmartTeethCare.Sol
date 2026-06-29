@@ -96,7 +96,7 @@ namespace SmartTeethCare.Service.DoctorModule
                 PaymentStatus = AppointmentPaymentStatus.Unpaid,
                 CreatedByAdmin = dto.CreatedByAdmin,
                 PaymentIntentId = dto.PaymentIntentId,
-                
+
             };
 
             await _unitOfWork.Repository<Appointment>().AddAsync(appointment);

@@ -4,12 +4,12 @@ using SmartTeethCare.Core.Entities;
 using SmartTeethCare.Core.Interfaces.Services.Lookup;
 using SmartTeethCare.Core.Interfaces.UnitOfWork;
 
-
 namespace SmartTeethCare.Service.Lookup
 {
     public class LookupService : ILookupService
     {
         private readonly IUnitOfWork _unitOfWork;
+
         public LookupService(IUnitOfWork unitOfWork)
         {
             _unitOfWork = unitOfWork;
@@ -18,7 +18,10 @@ namespace SmartTeethCare.Service.Lookup
         public async Task<IEnumerable<DoctorDTO>> GetDoctorsAsync()
         {
             var doctors = await _unitOfWork.Repository<Doctor>().FindAsync(
-                include: q => q.Include(d => d.User).Include(d => d.Speciality)
+                d => d.IsActive,
+                include: q => q
+                    .Include(d => d.User)
+                    .Include(d => d.Speciality)
             );
 
             return doctors.Select(d => new DoctorDTO
@@ -30,15 +33,16 @@ namespace SmartTeethCare.Service.Lookup
                 ConsultationFee = d.ConsultationFee,
                 YearsOfExperience = d.YearsOfExperience,
                 ImageUrl = d.ImageUrl
-
             });
         }
 
         public async Task<IEnumerable<DoctorDTO>> GetDoctorsBySpecialityAsync(int specialityId)
         {
             var doctors = await _unitOfWork.Repository<Doctor>().FindAsync(
-                d => d.SpecialtyID == specialityId,
-                include: q => q.Include(d => d.User).Include(d => d.Speciality)
+                d => d.SpecialtyID == specialityId && d.IsActive,
+                include: q => q
+                    .Include(d => d.User)
+                    .Include(d => d.Speciality)
             );
 
             return doctors.Select(d => new DoctorDTO
@@ -49,12 +53,9 @@ namespace SmartTeethCare.Service.Lookup
                 SpecializationName = d.Speciality?.Name ?? "No Specialization",
                 ConsultationFee = d.ConsultationFee,
                 YearsOfExperience = d.YearsOfExperience,
-                ImageUrl = d.ImageUrl   
-
+                ImageUrl = d.ImageUrl
             });
         }
-
-
 
         public async Task<IEnumerable<SpecializationDTO>> GetSpecializationsAsync()
         {
@@ -69,7 +70,9 @@ namespace SmartTeethCare.Service.Lookup
                 Name = s.Name,
                 Description = s.Description,
                 ImageUrl = s.ImageUrl,
-                DoctorsCount = s.doctors?.Count ?? 0
+
+                // يحسب الدكاترة الـ Active فقط
+                DoctorsCount = s.doctors?.Count(d => d.IsActive) ?? 0
             });
         }
     }

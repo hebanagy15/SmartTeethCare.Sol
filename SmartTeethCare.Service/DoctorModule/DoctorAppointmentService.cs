@@ -25,6 +25,9 @@ namespace SmartTeethCare.Service.DoctorModule
             if (doctor == null)
                 throw new UnauthorizedAccessException("Doctor not found");
 
+            if (!doctor.IsActive)
+                throw new UnauthorizedAccessException("Doctor account is deactivated.");
+
             return doctor.Id;
         }
 
