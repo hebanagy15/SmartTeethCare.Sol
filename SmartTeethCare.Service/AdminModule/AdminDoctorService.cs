@@ -1,9 +1,10 @@
 ﻿using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 using SmartTeethCare.Core.DTOs.AdminModule;
 using SmartTeethCare.Core.Entities;
+using SmartTeethCare.Core.Enums;
 using SmartTeethCare.Core.Interfaces.Services.AdminModule;
 using SmartTeethCare.Core.Interfaces.UnitOfWork;
-using Microsoft.EntityFrameworkCore;
 
 namespace SmartTeethCare.Service.AdminModule
 {
@@ -12,8 +13,9 @@ namespace SmartTeethCare.Service.AdminModule
         private readonly IUnitOfWork _unitOfWork;
         private readonly UserManager<User> _userManager;
 
-        public AdminDoctorService(IUnitOfWork unitOfWork,
-                                  UserManager<User> userManager)
+        public AdminDoctorService(
+            IUnitOfWork unitOfWork,
+            UserManager<User> userManager)
         {
             _unitOfWork = unitOfWork;
             _userManager = userManager;
@@ -36,7 +38,8 @@ namespace SmartTeethCare.Service.AdminModule
                 Salary = d.Salary,
                 WorkingHours = d.WorkingHours,
                 HiringDate = d.HiringDate,
-                SpecialityName = d.Speciality?.Name
+                SpecialityName = d.Speciality?.Name,
+                IsActive = d.IsActive
             });
         }
 
@@ -45,11 +48,12 @@ namespace SmartTeethCare.Service.AdminModule
             var doctor = (await _unitOfWork
                 .Repository<Doctor>()
                 .FindAsync(d => d.Id == id,
-                           q => q.Include(d => d.User)
-                                 .Include(d => d.Speciality)))
+                    q => q.Include(d => d.User)
+                          .Include(d => d.Speciality)))
                 .FirstOrDefault();
 
-            if (doctor == null) return null;
+            if (doctor == null)
+                return null;
 
             return new DoctorDto
             {
@@ -60,7 +64,8 @@ namespace SmartTeethCare.Service.AdminModule
                 Salary = doctor.Salary,
                 WorkingHours = doctor.WorkingHours,
                 HiringDate = doctor.HiringDate,
-                SpecialityName = doctor.Speciality?.Name
+                SpecialityName = doctor.Speciality?.Name,
+                IsActive = doctor.IsActive
             };
         }
 
@@ -70,11 +75,9 @@ namespace SmartTeethCare.Service.AdminModule
             {
                 UserName = dto.Email,
                 Email = dto.Email,
-
                 DisplayName = dto.FullName.StartsWith("Dr.")
                     ? dto.FullName
                     : $"Dr. {dto.FullName}",
-
                 Address = dto.Address ?? "Not Provided",
                 Gender = dto.Gender ?? "Not Specified"
             };
@@ -91,7 +94,7 @@ namespace SmartTeethCare.Service.AdminModule
 
             if (!roleResult.Succeeded)
             {
-                var errors = string.Join(", ", roleResult.Errors.Select(e => e.Description));
+                var errors = string.Join(", ", result.Errors.Select(e => e.Description));
                 throw new Exception(errors);
             }
 
@@ -101,7 +104,8 @@ namespace SmartTeethCare.Service.AdminModule
                 Salary = dto.Salary,
                 WorkingHours = dto.WorkingHours,
                 HiringDate = dto.HiringDate,
-                SpecialtyID = dto.SpecialityID
+                SpecialtyID = dto.SpecialityID,
+                IsActive = true
             };
 
             await _unitOfWork.Repository<Doctor>().AddAsync(doctor);
@@ -112,7 +116,7 @@ namespace SmartTeethCare.Service.AdminModule
         {
             var doctor = await _unitOfWork.Repository<Doctor>()
                 .FindAsync(d => d.Id == id,
-                           include: q => q.Include(d => d.User));
+                    include: q => q.Include(d => d.User));
 
             var doctorEntity = doctor.FirstOrDefault();
 
@@ -136,33 +140,94 @@ namespace SmartTeethCare.Service.AdminModule
             await _unitOfWork.Repository<Doctor>().UpdateAsync(doctorEntity);
             await _unitOfWork.CompleteAsync();
         }
-
         public async Task DeleteDoctorAsync(int id)
         {
-            var doctor = await _unitOfWork.Repository<Doctor>().GetByIdAsync(id);
+            var doctor = await _unitOfWork.Repository<Doctor>()
+                .FindAsync(
+                    d => d.Id == id,
+                    include: q => q.Include(d => d.Schedules));
 
-            if (doctor == null)
+            var doctorEntity = doctor.FirstOrDefault();
+
+            if (doctorEntity == null)
                 throw new Exception("Doctor not found");
 
-            await _unitOfWork.Repository<Doctor>().DeleteAsync(doctor);
+            // لو عنده مواعيد مستقبلية مينفعش يتعمله Disable
+            var hasFutureAppointments = (await _unitOfWork.Repository<Appointment>()
+                .FindAsync(a =>
+                    a.DoctorID == id &&
+                    a.Date.Date >= DateTime.Today &&
+                    a.Status != AppointmentStatus.Cancelled &&
+                    a.Status != AppointmentStatus.Completed &&
+                    a.Status != AppointmentStatus.Rejected))
+                .Any();
+
+            if (hasFutureAppointments)
+                throw new Exception("Doctor has upcoming appointments. Wait until all appointments are finished.");
+
+            // Disable الحساب
+            var user = await _userManager.FindByIdAsync(doctorEntity.UserId);
+
+            if (user != null)
+            {
+                user.LockoutEnd = DateTimeOffset.MaxValue;
+                await _userManager.UpdateAsync(user);
+            }
+
+            // تغيير حالة الدكتور
+            doctorEntity.IsActive = false;
+
+            // حذف الـ Schedule
+            foreach (var schedule in doctorEntity.Schedules.ToList())
+            {
+                await _unitOfWork.Repository<DoctorSchedule>().DeleteAsync(schedule);
+            }
+
+            await _unitOfWork.Repository<Doctor>().UpdateAsync(doctorEntity);
             await _unitOfWork.CompleteAsync();
         }
 
         public async Task ToggleDoctorStatusAsync(int id)
         {
-            var doctor = await _unitOfWork.Repository<Doctor>().GetByIdAsync(id);
+            var doctor = await _unitOfWork.Repository<Doctor>()
+                .FindAsync(
+                    d => d.Id == id,
+                    include: q => q.Include(d => d.Schedules));
 
-            if (doctor == null)
+            var doctorEntity = doctor.FirstOrDefault();
+
+            if (doctorEntity == null)
                 throw new Exception("Doctor not found");
 
-            var user = await _userManager.FindByIdAsync(doctor.UserId);
+            var user = await _userManager.FindByIdAsync(doctorEntity.UserId);
 
-            if (user.LockoutEnd == null)
-                user.LockoutEnd = DateTimeOffset.MaxValue;
-            else
+            if (user == null)
+                throw new Exception("User not found");
+
+            // Enable
+            if (user.LockoutEnd != null &&
+                user.LockoutEnd > DateTimeOffset.UtcNow)
+            {
                 user.LockoutEnd = null;
+                doctorEntity.IsActive = true;
+            }
+            else
+            {
+                // Disable
+                user.LockoutEnd = DateTimeOffset.MaxValue;
+                doctorEntity.IsActive = false;
+
+                // حذف الـ Schedule
+                foreach (var schedule in doctorEntity.Schedules.ToList())
+                {
+                    await _unitOfWork.Repository<DoctorSchedule>()
+                        .DeleteAsync(schedule);
+                }
+            }
 
             await _userManager.UpdateAsync(user);
+            await _unitOfWork.Repository<Doctor>().UpdateAsync(doctorEntity);
+            await _unitOfWork.CompleteAsync();
         }
     }
 }

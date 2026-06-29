@@ -16,7 +16,8 @@ namespace SmartTeethCare.Core.Entities
 
         public string? ImageUrl { get; set; }
         public decimal? ConsultationFee { get; set; }   
-        public int? YearsOfExperience { get; set; }     
+        public int? YearsOfExperience { get; set; }
+        public bool IsActive { get; set; } = true;
 
 
         public string UserId { get; set; }

@@ -16,6 +16,8 @@ namespace SmartTeethCare.Core.DTOs.AdminModule
         public int WorkingHours { get; set; }
         public DateTime HiringDate { get; set; }
         public string? SpecialityName { get; set; }
+
+        public bool IsActive { get; set; }
     }
 }
 
