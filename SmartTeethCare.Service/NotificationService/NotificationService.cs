@@ -23,7 +23,7 @@ namespace SmartTeethCare.Service.NotificationService
             _userManager = userManager;
         }
 
-        public async Task CreateAsync(string userId, string title, string message, bool sendEmail = false , Dictionary<string, string>? data = null)
+        public async Task CreateAsync(string userId, string title, string message, bool sendEmail = false, Dictionary<string, string>? data = null)
         {
             // 🔹 1. Save notification in DB
             var notification = new Notification
@@ -50,12 +50,14 @@ namespace SmartTeethCare.Service.NotificationService
 
                     var egyptTimeZone = TimeZoneInfo.FindSystemTimeZoneById("Egypt Standard Time");
 
-                    templateData["DATE"] = TimeZoneInfo
-                        .ConvertTimeFromUtc(DateTime.UtcNow, egyptTimeZone)
-                        .ToString("dd/MM/yyyy hh:mm tt");
+                    if (!templateData.ContainsKey("DATE"))
+                    {
+                        templateData["DATE"] = TimeZoneInfo
+                            .ConvertTimeFromUtc(DateTime.UtcNow, egyptTimeZone)
+                            .ToString("dd/MM/yyyy hh:mm tt");
+                    }
+
                     templateData["MESSAGE"] = message;
-                   
-                    
 
                     await _emailService.SendTemplateEmailAsync(
                         user.Email,
@@ -80,10 +82,10 @@ namespace SmartTeethCare.Service.NotificationService
             var doctorName = doctorUser?.UserName ?? "Doctor";
 
             var data = new Dictionary<string, string>
-    {
-        { "DATE", appointment.Date.ToString("dd/MM/yyyy hh:mm tt") },
-        { "DOCTOR", doctorName }
-    };
+            {
+                { "DATE", appointment.StartTime.ToString("dd/MM/yyyy hh:mm tt") },
+                { "DOCTOR", doctorName }
+            };
 
             await CreateAsync(
                 appointment.PatientID.ToString(),
@@ -100,10 +102,13 @@ namespace SmartTeethCare.Service.NotificationService
             return title switch
             {
                 "Appointment Booked" => "AppointmentBooked",
+                "Appointment Confirmed" => "AppointmentBooked", // ✅ زود
                 "Reminder" => "ReminderEmail",
                 "Appointment Cancelled" => "CancelAppointment",
                 "Confirm Email" => "EmailConfirmation",
-                _ => "Default"
+                _ => "AppointmentBooked"  //  
+
+
             };
         }
 
