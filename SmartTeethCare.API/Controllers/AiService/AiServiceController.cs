@@ -65,14 +65,12 @@ namespace SmartTeethCare.API.Controllers.AiService
                 .Where(p => p.Disease != top.Disease)
                 .Select(p =>
                 {
-                    var spec = allSpecialities
-                        .FirstOrDefault(s => s.Disease == p.Disease);
-
+                    
                     return new
                     {
                         Disease = p.Disease,
-                        Confidence = p.Confidence,
-                        Speciality = spec?.Name
+                        Confidence = p.Confidence
+                        
                     };
                 })
                 .ToList();
