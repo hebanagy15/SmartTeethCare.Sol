@@ -21,6 +21,7 @@ namespace SmartTeethCare.API.Extensions
                 context.Database.Migrate();
                 await SeedUsers.SeedAsync(services);
                 await DoctorSeed.SeedDoctorsAsy(userManager, context);
+                await PharmacySeed.SeedAsync(context);
             }
             catch (Exception ex)
             {

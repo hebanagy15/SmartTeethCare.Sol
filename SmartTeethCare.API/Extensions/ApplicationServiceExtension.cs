@@ -10,6 +10,7 @@ using SmartTeethCare.Core.Interfaces.Services.Lookup;
 using SmartTeethCare.Core.Interfaces.Services.MedicalRecordModule;
 using SmartTeethCare.Core.Interfaces.Services.NotificationService;
 using SmartTeethCare.Core.Interfaces.Services.PatientModule;
+using SmartTeethCare.Core.Interfaces.Services.Pharmacy;
 using SmartTeethCare.Core.Interfaces.Services.SecurityModule;
 using SmartTeethCare.Core.Interfaces.Services.Stripe;
 using SmartTeethCare.Core.Interfaces.UnitOfWork;
@@ -24,6 +25,7 @@ using SmartTeethCare.Service.Lookup;
 using SmartTeethCare.Service.MedicalRecordModule;
 using SmartTeethCare.Service.NotificationService;
 using SmartTeethCare.Service.PatientModule;
+using SmartTeethCare.Service.Pharmacy;
 using SmartTeethCare.Service.SecurityModule;
 using SmartTeethCare.Service.Services.Stripe;
 using SmartTeethCare.Services.AppointmentModule;
@@ -68,6 +70,7 @@ namespace SmartTeethCare.API.Extensions
             services.AddScoped<IPaymentService, PaymentService>();
             services.AddScoped<IMedicalRecordService, MedicalRecordService>();
             services.AddScoped<SlotCleanupJob>();
+            services.AddScoped<IPharmacyService, PharmacyService>();
             return services;
         }
     }

@@ -21,8 +21,7 @@ namespace SmartTeethCare.Repository.Configurations
             builder.Property(p => p.Address)
                    .HasMaxLength(500);
 
-            builder.Property(p => p.Location)
-                   .HasMaxLength(200);
+           
 
             builder.Property(p => p.Phone)
                    .HasMaxLength(20);
