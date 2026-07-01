@@ -5,7 +5,7 @@ namespace SmartTeethCare.Core.Interfaces.Services.Stripe
 {
     public interface IPaymentService
     {
-        Task<PaymentResponse> CreatePaymentIntent(CreatePaymentRequest request);
-        Task HandlePaymentSuccess(int appointmentId);
+        Task<PaymentResponse> CreatePaymentIntent(CreatePaymentRequest request, int patientId);
+        Task HandleWebhook(string json, string stripeSignature);
     }
 }

@@ -19,6 +19,7 @@ using SmartTeethCare.Service.AdminModule;
 using SmartTeethCare.Service.AiService;
 using SmartTeethCare.Service.DoctorModule;
 using SmartTeethCare.Service.Implementation;
+using SmartTeethCare.Service.Jobs;
 using SmartTeethCare.Service.Lookup;
 using SmartTeethCare.Service.MedicalRecordModule;
 using SmartTeethCare.Service.NotificationService;
@@ -66,6 +67,7 @@ namespace SmartTeethCare.API.Extensions
             services.AddScoped<IAppointmentBookingService, AppointmentBookingService>();
             services.AddScoped<IPaymentService, PaymentService>();
             services.AddScoped<IMedicalRecordService, MedicalRecordService>();
+            services.AddScoped<SlotCleanupJob>();
             return services;
         }
     }

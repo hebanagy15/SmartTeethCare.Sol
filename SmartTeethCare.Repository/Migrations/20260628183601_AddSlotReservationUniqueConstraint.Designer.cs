@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using SmartTeethCare.Repository.Data;
 
@@ -11,9 +12,11 @@ using SmartTeethCare.Repository.Data;
 namespace SmartTeethCare.Repository.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260628183601_AddSlotReservationUniqueConstraint")]
+    partial class AddSlotReservationUniqueConstraint
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -320,7 +323,7 @@ namespace SmartTeethCare.Repository.Migrations
 
                     b.HasIndex("DoctorId");
 
-                    b.ToTable("DoctorSchedules", (string)null);
+                    b.ToTable("DoctorSchedules");
                 });
 
             modelBuilder.Entity("SmartTeethCare.Core.Entities.EducationalVideos", b =>
@@ -379,7 +382,7 @@ namespace SmartTeethCare.Repository.Migrations
 
                     b.HasIndex("PatientId");
 
-                    b.ToTable("MedicalHistories", (string)null);
+                    b.ToTable("MedicalHistories");
                 });
 
             modelBuilder.Entity("SmartTeethCare.Core.Entities.MedicalRecord", b =>
@@ -477,7 +480,7 @@ namespace SmartTeethCare.Repository.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Notifications", (string)null);
+                    b.ToTable("Notifications");
                 });
 
             modelBuilder.Entity("SmartTeethCare.Core.Entities.Patient", b =>
@@ -492,9 +495,6 @@ namespace SmartTeethCare.Repository.Migrations
                         .IsRequired()
                         .HasMaxLength(1000)
                         .HasColumnType("nvarchar(1000)");
-
-                    b.Property<string>("ProfileImageUrl")
-                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("UserId")
                         .IsRequired()
@@ -668,7 +668,7 @@ namespace SmartTeethCare.Repository.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("RefreshTokens", (string)null);
+                    b.ToTable("RefreshTokens");
                 });
 
             modelBuilder.Entity("SmartTeethCare.Core.Entities.Review", b =>
@@ -710,6 +710,41 @@ namespace SmartTeethCare.Repository.Migrations
                     b.HasIndex("PatientID");
 
                     b.ToTable("Reviews", (string)null);
+                });
+
+            modelBuilder.Entity("SmartTeethCare.Core.Entities.SlotReservation", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("Date")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("DoctorId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("ExpiresAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("PatientId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("PaymentIntentId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<TimeSpan>("StartTime")
+                        .HasColumnType("time");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("DoctorId", "Date", "StartTime")
+                        .IsUnique();
+
+                    b.ToTable("SlotReservations");
                 });
 
             modelBuilder.Entity("SmartTeethCare.Core.Entities.Speciality", b =>

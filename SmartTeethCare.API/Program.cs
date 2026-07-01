@@ -1,6 +1,8 @@
+using Hangfire;
 using Microsoft.AspNetCore.StaticFiles;
 using SmartTeethCare.API.Extensions;
 using SmartTeethCare.API.Middlewares;
+using SmartTeethCare.Service.Jobs;
 
 namespace SmartTeethCare.API
 {
@@ -49,7 +51,20 @@ namespace SmartTeethCare.API
             app.UseStatusCodePagesWithRedirects("/errors/{0}"); // Handle Status Codes (404)
             app.UseHttpsRedirection();
             app.UseStaticFiles();
-            app.UseRouting();          
+            app.UseRouting();
+
+            // ⁄‘«‰ «·‹ Webhook Ìﬁ—√ «·‹ Body ’Õ
+
+            app.Use(async (ctx, next) =>
+
+            {
+
+                ctx.Request.EnableBuffering();
+
+                await next();
+
+            });
+            app.UseHangfireDashboard();
 
             app.UseCors("AllowFrontend"); // CORS
             app.UseAuthentication();
@@ -57,6 +72,17 @@ namespace SmartTeethCare.API
 
 
             app.MapControllers();
+
+
+            // Hangfire Job ﬂ· œﬁÌﬁ… Ì„”Õ «·‹ expired reservations
+
+            RecurringJob.AddOrUpdate<SlotCleanupJob>(
+
+                "clean-expired-slots",
+
+                x => x.Execute(),
+
+                Cron.Minutely);
 
             await app.SeedDatabaseAsync();
 
