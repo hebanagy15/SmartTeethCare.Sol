@@ -1,4 +1,4 @@
-﻿// SmartTeethCare.API/Controllers/PaymentModule/PaymentController.cs
+// SmartTeethCare.API/Controllers/PaymentModule/PaymentController.cs
 
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -62,7 +62,35 @@ namespace SmartTeethCare.API.Controllers.PaymentModule
             }
             catch (Exception ex)
             {
-                return BadRequest(ex.Message);
+                return BadRequest(new { error = ex.Message, details = ex.InnerException?.Message });
+            }
+        }
+
+        // ✅ STEP 3: الفرونت بينده على ده بعد ما confirmCardPayment ينجح
+        [Authorize(Roles = "Patient")]
+        [HttpPost("confirm")]
+        public async Task<IActionResult> ConfirmPayment([FromBody] ConfirmPaymentRequest request)
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (userId == null) return Unauthorized();
+
+            var patients = await _unitOfWork.Repository<Patient>()
+                .FindAsync(p => p.UserId == userId);
+            var patient = patients.FirstOrDefault();
+            if (patient == null) return Unauthorized("Patient not found");
+
+            try
+            {
+                var result = await _paymentService.ConfirmPayment(request.PaymentIntentId, patient.Id);
+                return Ok(result);
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return StatusCode(403, new { error = ex.Message });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { error = ex.Message });
             }
         }
     }

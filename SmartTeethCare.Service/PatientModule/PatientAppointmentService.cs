@@ -194,7 +194,6 @@ namespace SmartTeethCare.Service.PatientModule
                 StartTime = appointment.StartTime,       
                 EndTime = appointment.EndTime,           
                 Status = appointment.Status.ToString(),
-                Amount = appointment.Amount,
                 CreatedAt = appointment.CreatedAt
             };
 

@@ -1,7 +1,8 @@
-﻿using Hangfire;
+using Hangfire;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Configuration;
 using SmartTeethCare.Core.DTOs.DoctorModule;
+using SmartTeethCare.Core.DTOs.PatientModule;
 using SmartTeethCare.Core.DTOs.Payment;
 using SmartTeethCare.Core.DTOs.Stripe;
 using SmartTeethCare.Core.Entities;
@@ -38,13 +39,43 @@ namespace SmartTeethCare.Service.Services.Stripe
         }
 
         // ============================================================
-        // STEP 1: المريض يختار موعد → نشوف Reservation → نعمل PaymentIntent
+        // STEP 1: المريض يختار موعد → PaymentIntent + Reservation
         // ============================================================
         public async Task<PaymentResponse> CreatePaymentIntent(CreatePaymentRequest request, int patientId)
         {
             var reservationRepo = _unitOfWork.Repository<SlotReservation>();
 
-            // ✅ في حد تاني حاجز نفس الـ Slot ومش expired؟
+            // 1. التأكد أن الموعد في المستقبل
+            if (request.Date.Date < DateTime.Today)
+                throw new InvalidOperationException("لا يمكن حجز موعد في الماضي");
+
+            if (request.Date.Date == DateTime.Today && request.StartTime < DateTime.Now.TimeOfDay)
+                throw new InvalidOperationException("لا يمكن حجز موعد في الماضي");
+
+            // 2. التأكد أن الدكتور شغال اليوم ده
+            var dayOfWeek = request.Date.DayOfWeek;
+            var schedules = await _unitOfWork.Repository<DoctorSchedule>()
+                .FindAsync(s => s.DoctorId == request.DoctorId && s.DayOfWeek == dayOfWeek);
+            var schedule = schedules.FirstOrDefault();
+            if (schedule == null)
+                throw new InvalidOperationException("الدكتور غير متاح في هذا اليوم");
+
+            // 3. التأكد أن الوقت جوه ساعات العمل
+            var endTime = request.StartTime + TimeSpan.FromMinutes(schedule.SlotDurationMinutes);
+            if (request.StartTime < schedule.StartTime || endTime > schedule.EndTime)
+                throw new InvalidOperationException("الوقت المختار خارج ساعات عمل الدكتور");
+
+            // 4. التأكد أن الموعد غير محجوز ومؤكد بالفعل في جدول المواعيد
+            var booked = await _unitOfWork.Repository<Appointment>().FindAsync(a =>
+                a.DoctorID == request.DoctorId &&
+                a.Date.Date == request.Date.Date &&
+                a.StartTime == request.StartTime &&
+                a.Status != AppointmentStatus.Rejected);
+
+            if (booked.Any())
+                throw new InvalidOperationException("هذا الموعد محجوز بالفعل، يرجى اختيار موعد آخر");
+
+            // 5. التأكد أن الموعد ليس محجوزاً مؤقتاً بواسطة شخص آخر يدفع الآن
             var existing = await reservationRepo.FindAsync(r =>
                 r.DoctorId == request.DoctorId &&
                 r.Date.Date == request.Date.Date &&
@@ -55,17 +86,15 @@ namespace SmartTeethCare.Service.Services.Stripe
                 throw new InvalidOperationException(
                     "هذا الموعد محجوز مؤقتاً، يرجى الانتظار 10 دقائق أو اختيار موعد آخر");
 
-            // ✅ عمل PaymentIntent على Stripe
             var options = new PaymentIntentCreateOptions
             {
-                Amount = 50 * 100, // 50 EGP deposit
+                Amount = 50 * 100,
                 Currency = "egp",
                 AutomaticPaymentMethods = new PaymentIntentAutomaticPaymentMethodsOptions
                 {
                     Enabled = true,
-                    AllowRedirects = "never",
+                    AllowRedirects = "never"
                 },
-                // بنحط بيانات الموعد في Metadata عشان الـ Webhook يحجز بعدين
                 Metadata = new Dictionary<string, string>
                 {
                     { "doctorId",      request.DoctorId.ToString() },
@@ -79,7 +108,6 @@ namespace SmartTeethCare.Service.Services.Stripe
             var stripeService = new PaymentIntentService();
             var paymentIntent = await stripeService.CreateAsync(options);
 
-            // ✅ عمل Reservation لـ 10 دقايق
             await reservationRepo.AddAsync(new SlotReservation
             {
                 DoctorId = request.DoctorId,
@@ -100,75 +128,98 @@ namespace SmartTeethCare.Service.Services.Stripe
         }
 
         // ============================================================
-        // STEP 2: Stripe بتبعت Webhook بعد الدفع
+        // STEP 2: Webhook من Stripe (Source of Truth الرسمي)
         // ============================================================
         public async Task HandleWebhook(string json, string stripeSignature)
         {
             var webhookSecret = _config["Stripe:WebhookSecret"];
 
             Event stripeEvent;
-
             try
             {
-                stripeEvent = EventUtility.ConstructEvent(
-                    json,
-                    stripeSignature,
-                    webhookSecret,
-                    throwOnApiVersionMismatch: false);
+                stripeEvent = EventUtility.ConstructEvent(json, stripeSignature, webhookSecret);
             }
             catch (StripeException ex)
             {
-                throw new Exception(ex.Message);
+                throw new Exception($"Invalid Stripe signature: {ex.Message}");
             }
 
             if (stripeEvent.Type == "payment_intent.succeeded")
             {
                 var paymentIntent = stripeEvent.Data.Object as PaymentIntent;
                 if (paymentIntent != null)
-                    await HandlePaymentSuccess(paymentIntent);
+                    await ProcessSuccessfulPayment(paymentIntent);
             }
         }
 
         // ============================================================
-        // STEP 3: الدفع نجح → نحجز + نمسح Reservation + Notification
+        // STEP 3 (جديد): Confirm Endpoint اللي الفرونت بينده عليه
+        // بعد ما confirmCardPayment ينجح
         // ============================================================
-        private async Task HandlePaymentSuccess(PaymentIntent paymentIntent)
+        public async Task<AppointmentDetailsDTO> ConfirmPayment(string paymentIntentId, int patientId)
         {
-            // 1. Get latest PaymentIntent from Stripe
-            var paymentIntentService = new PaymentIntentService();
+            var stripeService = new PaymentIntentService();
+            var paymentIntent = await stripeService.GetAsync(paymentIntentId);
 
-            var latestPaymentIntent =
-                await paymentIntentService.GetAsync(paymentIntent.Id);
+            if (paymentIntent == null)
+                throw new Exception("Payment not found");
 
-            // 2. Verify payment status
-            if (latestPaymentIntent.Status != "succeeded")
-                return;
+            // ✅ متصدقش الفرونت، اتأكد من Stripe نفسه
+            if (paymentIntent.Status != "succeeded")
+                throw new InvalidOperationException("لم يتم إتمام الدفع بعد");
 
-            // 3. Check if already processed
-            var existingAppointment = (await _unitOfWork.Repository<Appointment>()
-                .FindAsync(a => a.PaymentIntentId == paymentIntent.Id))
-                .FirstOrDefault();
+            // ✅ اتأكد إن الـ PaymentIntent ده فعلاً بتاع المريض ده
+            if (!paymentIntent.Metadata.TryGetValue("patientId", out var metaPatientId) ||
+                metaPatientId != patientId.ToString())
+                throw new UnauthorizedAccessException("هذه العملية لا تخصك");
 
-            if (existingAppointment != null)
-                return;
+            var appointment = await ProcessSuccessfulPayment(paymentIntent);
 
-            // 4. Check reservation exists
-            var reservation = (await _unitOfWork.Repository<SlotReservation>()
-                .FindAsync(r => r.PaymentIntentId == paymentIntent.Id))
-                .FirstOrDefault();
+            if (appointment == null)
+                throw new Exception("تعذر تأكيد الحجز، يرجى التواصل مع الدعم الفني");
 
-            if (reservation == null)
-                throw new Exception("Reservation not found.");
+            var doctor = await _unitOfWork.Repository<Doctor>().GetByIdAsync(appointment.DoctorID);
+            var patient = await _unitOfWork.Repository<Patient>().GetByIdAsync(appointment.PatientID);
+            var doctorUser = doctor != null ? await _userManager.FindByIdAsync(doctor.UserId) : null;
+            var patientUser = patient != null ? await _userManager.FindByIdAsync(patient.UserId) : null;
 
-
-            var meta = latestPaymentIntent.Metadata;
-
-            // ✅ لو Metadata فاضية = test event من stripe trigger، ignore
-            if (meta == null || !meta.ContainsKey("doctorId"))
+            return new AppointmentDetailsDTO
             {
-                Console.WriteLine("⚠️ Test event - no metadata, skipping");
-                return;
+                Id = appointment.Id,
+                DoctorId = appointment.DoctorID,
+                DoctorName = doctorUser?.UserName ?? "Unknown",
+                PatientId = appointment.PatientID,
+                PatientName = patientUser?.UserName ?? "Unknown",
+                Amount = appointment.Amount,
+                Date = appointment.Date,
+                StartTime = appointment.StartTime,
+                EndTime = appointment.EndTime,
+                Status = appointment.Status.ToString(),
+                CreatedAt = appointment.CreatedAt
+            };
+        }
+
+        // ============================================================
+        // المنطق المشترك (Idempotent) بين الـ Webhook والـ Confirm
+        // ============================================================
+        private async Task<Appointment?> ProcessSuccessfulPayment(PaymentIntent paymentIntent)
+        {
+            var reservationRepo = _unitOfWork.Repository<SlotReservation>();
+
+            var reservations = await reservationRepo
+                .FindAsync(r => r.PaymentIntentId == paymentIntent.Id);
+            var reservation = reservations.FirstOrDefault();
+
+            // ✅ لو مفيش Reservation → يبقى واحد تاني (Webhook أو Confirm) سبق وعالجها
+            // نرجع الـ Appointment الموجود بالفعل (Idempotent، مفيش Duplicate)
+            if (reservation == null)
+            {
+                var existing = await _unitOfWork.Repository<Appointment>()
+                    .FindAsync(a => a.PaymentIntentId == paymentIntent.Id);
+                return existing.FirstOrDefault();
             }
+
+            var meta = paymentIntent.Metadata;
 
             var dto = new BookAppointmentDto
             {
@@ -176,94 +227,65 @@ namespace SmartTeethCare.Service.Services.Stripe
                 PatientId = int.Parse(meta["patientId"]),
                 Date = DateTime.Parse(meta["date"]),
                 StartTime = TimeSpan.Parse(meta["startTime"]),
+                Amount = (int)(paymentIntent.Amount / 100),
                 PaymentMethod = meta["paymentMethod"],
                 CreatedByAdmin = false,
-                PaymentIntentId = latestPaymentIntent.Id
+                PaymentIntentId = paymentIntent.Id
             };
 
-
-            Console.WriteLine($"📌 Booking: DoctorId={dto.DoctorId}, PatientId={dto.PatientId}, Date={dto.Date}, Start={dto.StartTime}");
-
             var result = await _bookingService.BookAppointmentAsync(dto);
-
-            Console.WriteLine($"📌 Booking Result: Success={result.Success}, Message={result.Message}");
-
             if (!result.Success)
-            {
-                await _unitOfWork.Repository<SlotReservation>()
-                    .DeleteAsync(reservation);
-
-                await _unitOfWork.CompleteAsync();
-
-                Console.WriteLine(result.Message);
-                return;
-            }
-
-            // ✅ حجز الموعد
-            //var result = await _bookingService.BookAppointmentAsync(dto);
-            //if (!result.Success) return;
+                return null; // ما ينفعش يحصل عادي لأن الـ Reservation كانت ماسكة الـ Slot
 
             var appointment = await _unitOfWork.Repository<Appointment>()
                 .GetByIdAsync(result.AppointmentId!.Value);
-            if (appointment == null) return;
+            if (appointment == null) return null;
 
-            // ✅ PaymentStatus = Paid
             appointment.PaymentStatus = AppointmentPaymentStatus.Paid;
-            appointment.PaymentMethod = Enum.Parse<AppointmentPaymentMethod>(
-                    meta["paymentMethod"],
-                    true);
+            appointment.PaymentMethod = AppointmentPaymentMethod.Visa;
             await _unitOfWork.Repository<Appointment>().UpdateAsync(appointment);
 
-            // ✅ امسح الـ Reservation
-            var reservations = await _unitOfWork.Repository<SlotReservation>()
-                .FindAsync(r => r.PaymentIntentId == paymentIntent.Id);
-            reservation = reservations.FirstOrDefault();
-            if (reservation != null)
-                await _unitOfWork.Repository<SlotReservation>().DeleteAsync(reservation);
+            await reservationRepo.DeleteAsync(reservation);
 
             await _unitOfWork.CompleteAsync();
 
-            // ✅ جيب الـ Patient واسم الدكتور للـ Notification
-            var patients = await _unitOfWork.Repository<Patient>()
-                .FindAsync(p => p.Id == dto.PatientId);
-            var patient = patients.FirstOrDefault();
-            if (patient == null) return;
-
-            var doctor = await _unitOfWork.Repository<Doctor>().GetByIdAsync(dto.DoctorId);
-            var doctorUser = doctor != null ? await _userManager.FindByIdAsync(doctor.UserId) : null;
-            var doctorName = doctorUser?.DisplayName ?? doctorUser?.UserName ?? "Doctor";
-
+            // ✅ Notification + Reminder (Best Effort)
             try
             {
-                // 📩 Notification: اتحجز بنجاح
-                await _notificationService.CreateAsync(
-                    patient.UserId,
-                    "Appointment Confirmed",
-                    "Your appointment has been confirmed successfully.",
-                    true,
-                    new Dictionary<string, string>
-                    {
-                        { "DATE", appointment.Date.ToString("dd/MM/yyyy") + " " + DateTime.Today.Add(appointment.StartTime).ToString("hh:mm tt") },
-                        { "DOCTOR", doctorName }
-                    }
-                );
-
-
-                // ⏰ Reminder قبل الموعد بـ 3 ساعات
-                var appointmentDateTime = appointment.Date.Date + appointment.StartTime;
-                var reminderTime = appointmentDateTime.ToUniversalTime().AddHours(-3);
-                if (reminderTime > DateTime.UtcNow)
+                var patients = await _unitOfWork.Repository<Patient>()
+                    .FindAsync(p => p.Id == dto.PatientId);
+                var patient = patients.FirstOrDefault();
+                if (patient != null)
                 {
-                    BackgroundJob.Schedule<INotificationService>(
-                        x => x.SendReminderAsync(appointment.Id),
-                        reminderTime);
+                    var doctor = await _unitOfWork.Repository<Doctor>().GetByIdAsync(dto.DoctorId);
+                    var doctorUser = doctor != null ? await _userManager.FindByIdAsync(doctor.UserId) : null;
+                    var doctorName = doctorUser?.DisplayName ?? doctorUser?.UserName ?? "Doctor";
+
+                    await _notificationService.CreateAsync(
+                        patient.UserId,
+                        "Appointment Confirmed",
+                        "Your appointment has been confirmed successfully.",
+                        true,
+                        new Dictionary<string, string>
+                        {
+                            { "DATE",   appointment.Date.ToString("dd/MM/yyyy") + " " + appointment.StartTime },
+                            { "DOCTOR", doctorName }
+                        }
+                    );
+
+                    var appointmentDateTime = appointment.Date.Date + appointment.StartTime;
+                    var reminderTime = appointmentDateTime.ToUniversalTime().AddHours(-3);
+                    if (reminderTime > DateTime.UtcNow)
+                    {
+                        BackgroundJob.Schedule<INotificationService>(
+                            x => x.SendReminderAsync(appointment.Id),
+                            reminderTime);
+                    }
                 }
             }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"❌ Exception: {ex.Message}");
-                Console.WriteLine($"❌ Inner: {ex.InnerException?.Message}");
-            }
+            catch { }
+
+            return appointment;
         }
     }
 }
