@@ -150,6 +150,25 @@ namespace SmartTeethCare.Service.Services.Stripe
                 if (paymentIntent != null)
                     await ProcessSuccessfulPayment(paymentIntent);
             }
+            // ✅ لو دفع فاشل (كارت غلط) → مد وقت الحجز المؤقت 10 دقائق تانية عشان يحاول تاني
+            else if (stripeEvent.Type == "payment_intent.payment_failed")
+            {
+                var paymentIntent = stripeEvent.Data.Object as PaymentIntent;
+                if (paymentIntent != null)
+                {
+                    var reservationRepo = _unitOfWork.Repository<SlotReservation>();
+                    var reservations = await reservationRepo
+                        .FindAsync(r => r.PaymentIntentId == paymentIntent.Id);
+                    var reservation = reservations.FirstOrDefault();
+                    if (reservation != null)
+                    {
+                        // مد الوقت 10 دقائق من دلوقتي عشان المريض يقدر يحاول بكارت تاني
+                        reservation.ExpiresAt = DateTime.UtcNow.AddMinutes(10);
+                        await reservationRepo.UpdateAsync(reservation);
+                        await _unitOfWork.CompleteAsync();
+                    }
+                }
+            }
         }
 
         // ============================================================
@@ -235,7 +254,7 @@ namespace SmartTeethCare.Service.Services.Stripe
 
             var result = await _bookingService.BookAppointmentAsync(dto);
             if (!result.Success)
-                return null; // ما ينفعش يحصل عادي لأن الـ Reservation كانت ماسكة الـ Slot
+                throw new InvalidOperationException($"Booking failed: {result.Message}");
 
             var appointment = await _unitOfWork.Repository<Appointment>()
                 .GetByIdAsync(result.AppointmentId!.Value);
