@@ -262,6 +262,7 @@ namespace SmartTeethCare.Service.Services.Stripe
 
             appointment.PaymentStatus = AppointmentPaymentStatus.Paid;
             appointment.PaymentMethod = AppointmentPaymentMethod.Visa;
+            appointment.Status = AppointmentStatus.Approved; // ✅ تغيير الحالة إلى Approved بعد الدفع
             await _unitOfWork.Repository<Appointment>().UpdateAsync(appointment);
 
             await reservationRepo.DeleteAsync(reservation);
@@ -305,6 +306,31 @@ namespace SmartTeethCare.Service.Services.Stripe
             catch { }
 
             return appointment;
+        }
+
+        // ============================================================
+        // STEP 4 (جديد): Refund Payment
+        // ============================================================
+        public async Task<bool> RefundPayment(string paymentIntentId)
+        {
+            if (string.IsNullOrEmpty(paymentIntentId))
+                return false;
+
+            try
+            {
+                var refundService = new RefundService();
+                var refundOptions = new RefundCreateOptions
+                {
+                    PaymentIntent = paymentIntentId
+                };
+                var refund = await refundService.CreateAsync(refundOptions);
+                return refund.Status == "succeeded";
+            }
+            catch (Exception)
+            {
+                // In a real application, you might want to log this exception
+                return false;
+            }
         }
     }
 }

@@ -1,19 +1,22 @@
-﻿using SmartTeethCare.Core.DTOs.DoctorModule;
+using SmartTeethCare.Core.DTOs.DoctorModule;
 using SmartTeethCare.Core.Entities;
 using SmartTeethCare.Core.Enums;
 using SmartTeethCare.Core.Interfaces.Services.DoctorModule;
 using SmartTeethCare.Core.Interfaces.UnitOfWork;
 using Microsoft.EntityFrameworkCore;
+using SmartTeethCare.Core.Interfaces.Services.Stripe;
 
 namespace SmartTeethCare.Service.DoctorModule
 {
     public class DoctorAppointmentService : IDoctorAppointmentService
     {
         private readonly IUnitOfWork _unitOfWork;
+        private readonly IPaymentService _paymentService;
 
-        public DoctorAppointmentService(IUnitOfWork unitOfWork)
+        public DoctorAppointmentService(IUnitOfWork unitOfWork, IPaymentService paymentService)
         {
             _unitOfWork = unitOfWork;
+            _paymentService = paymentService;
         }
 
         private async Task<int> GetDoctorIdAsync(string userId)
@@ -111,6 +114,16 @@ namespace SmartTeethCare.Service.DoctorModule
 
             if (appointment == null || appointment.DoctorID != doctorId)
                 throw new KeyNotFoundException("Appointment not found");
+
+            // Doctor refund logic: If paid, refund automatically
+            if (appointment.PaymentStatus == AppointmentPaymentStatus.Paid && !string.IsNullOrEmpty(appointment.PaymentIntentId))
+            {
+                bool refunded = await _paymentService.RefundPayment(appointment.PaymentIntentId);
+                if (refunded)
+                {
+                    appointment.PaymentStatus = AppointmentPaymentStatus.Refunded;
+                }
+            }
 
             appointment.Status = AppointmentStatus.Rejected;
 

@@ -1,4 +1,4 @@
-﻿using SmartTeethCare.Core.DTOs.DoctorModule;
+using SmartTeethCare.Core.DTOs.DoctorModule;
 using SmartTeethCare.Core.Entities;
 using SmartTeethCare.Core.Enums;
 using SmartTeethCare.Core.Interfaces.Services.DoctorModule;
@@ -111,6 +111,40 @@ namespace SmartTeethCare.Service.DoctorModule
                 .FirstOrDefault();
 
             return doctor?.Id;
+        }
+
+        public async Task DeleteScheduleAsync(int scheduleId, string userId, bool isAdmin)
+        {
+            var schedule = await _unitOfWork.Repository<DoctorSchedule>().GetByIdAsync(scheduleId);
+            if (schedule == null)
+                throw new KeyNotFoundException("Schedule not found.");
+
+            if (!isAdmin)
+            {
+                var doctorId = await GetDoctorIdByUserIdAsync(userId);
+                if (doctorId == null || schedule.DoctorId != doctorId.Value)
+                    throw new UnauthorizedAccessException("You are not authorized to delete this schedule.");
+            }
+
+            // Check if there are any future appointments booked for this doctor on this DayOfWeek
+            var futureAppointments = await _unitOfWork.Repository<Appointment>()
+                .FindAsync(a => 
+                    a.DoctorID == schedule.DoctorId && 
+                    a.Date.Date >= DateTime.UtcNow.Date &&
+                    a.Status != AppointmentStatus.Rejected && 
+                    a.Status != AppointmentStatus.Cancelled);
+
+            var appointmentsOnDay = futureAppointments
+                .Where(a => a.Date.DayOfWeek == schedule.DayOfWeek)
+                .ToList();
+
+            if (appointmentsOnDay.Any())
+            {
+                throw new InvalidOperationException("Cannot cancel schedule because patients have already booked appointments on this day.");
+            }
+
+            await _unitOfWork.Repository<DoctorSchedule>().DeleteAsync(schedule);
+            await _unitOfWork.CompleteAsync();
         }
     }
 }

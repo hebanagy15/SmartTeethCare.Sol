@@ -1,4 +1,4 @@
-﻿using SmartTeethCare.Core.DTOs.DoctorModule;
+using SmartTeethCare.Core.DTOs.DoctorModule;
 
 namespace SmartTeethCare.Core.Interfaces.Services.DoctorModule
 {
@@ -8,5 +8,6 @@ namespace SmartTeethCare.Core.Interfaces.Services.DoctorModule
         Task<List<DoctorScheduleDto>> GetDoctorScheduleAsync(int doctorId);
         Task AddScheduleAsync(CreateDoctorScheduleDto dto);
         Task<int?> GetDoctorIdByUserIdAsync(string userId);
+        Task DeleteScheduleAsync(int scheduleId, string userId, bool isAdmin);
     }
 }

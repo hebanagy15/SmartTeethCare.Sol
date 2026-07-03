@@ -19,20 +19,6 @@ namespace SmartTeethCare.Web.Areas.Patient.Controllers
             _appointmentService = appointmentService;
         }
 
-        [HttpPost(nameof(BookAppointment))]
-        public async Task<IActionResult> BookAppointment([FromBody] BookAppointmentDto dto)
-        {
-            try
-            {
-                await _appointmentService.BookAppointment(dto, User); 
-                return Ok(new { message = "Appointment booked successfully" });
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(new { error = ex.Message });
-            }
-        }
-
         [HttpPatch("CancelAppointment/{appointmentId}")]
         public async Task<IActionResult> CancelAppointment(int appointmentId)
         {

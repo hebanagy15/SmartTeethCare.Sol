@@ -1,4 +1,4 @@
-﻿using Hangfire;
+using Hangfire;
 using Microsoft.AspNetCore.Identity;
 using SmartTeethCare.Core.DTOs.DoctorModule;
 using SmartTeethCare.Core.DTOs.PatientModule;
@@ -8,6 +8,7 @@ using SmartTeethCare.Core.Interfaces.Services.DoctorModule;
 using SmartTeethCare.Core.Interfaces.Services.NotificationService;
 using SmartTeethCare.Core.Interfaces.Services.PatientModule;
 using SmartTeethCare.Core.Interfaces.UnitOfWork;
+using SmartTeethCare.Core.Interfaces.Services.Stripe;
 using System;
 using System.Security.Claims;
 
@@ -19,70 +20,23 @@ namespace SmartTeethCare.Service.PatientModule
         private readonly UserManager<User> _userManager;
         private readonly INotificationService _notificationService;
         private readonly IAppointmentBookingService _bookingService;
+        private readonly IPaymentService _paymentService;
 
-        public PatientAppointmentService(IUnitOfWork uow, UserManager<User> userManager, INotificationService notificationService, IAppointmentBookingService bookingService)
+        public PatientAppointmentService(
+            IUnitOfWork uow, 
+            UserManager<User> userManager, 
+            INotificationService notificationService, 
+            IAppointmentBookingService bookingService,
+            IPaymentService paymentService)
         {
             _uow = uow;
             _userManager = userManager;
             _notificationService = notificationService;
             _bookingService = bookingService;
-
+            _paymentService = paymentService;
         }
 
-        public async Task BookAppointment(BookAppointmentDto dto, ClaimsPrincipal user)
-        {
-            var userId = user.FindFirstValue(ClaimTypes.NameIdentifier) ?? throw new Exception("User not authenticated");
-
-            var patients = await _uow.Repository<Patient>()
-                .FindAsync(p => p.UserId == userId);
-
-            var patient = patients.FirstOrDefault();
-
-            if (patient == null)
-                throw new Exception("Patient not found");
-
-            var patientId = patient.Id;
-            dto.PatientId = patient.Id;
-            dto.CreatedByAdmin = false;
-
-            var result = await _bookingService.BookAppointmentAsync(dto);
-
-            if (!result.Success)
-                throw new InvalidOperationException(result.Message);
-
-            try
-            {
-                var doctor = await _uow.Repository<Doctor>().GetByIdAsync(dto.DoctorId);
-                var doctorUser = await _userManager.FindByIdAsync(doctor.UserId);
-                var doctorName = doctorUser?.DisplayName ?? doctorUser?.UserName ?? "Doctor";
-
-                //await _notificationService.CreateAsync(
-                //      patient.UserId,
-                //      "Appointment Booked",
-                //      "Your appointment is confirmed",
-                //      true,// email 
-                //      new Dictionary<string, string>
-                //      {
-                //            { "DATE", dto.Date.ToString("dd/MM/yyyy hh:mm tt") },
-                //            { "DOCTOR", doctorName }
-                //      }
-                //      );
-
-                //var appointmentDateTime = dto.Date.Date + dto.StartTime;
-                //var reminderTime = appointmentDateTime.ToUniversalTime().AddHours(-3);
-
-                //if (reminderTime > DateTime.UtcNow)
-                //{
-                //    BackgroundJob.Schedule<INotificationService>(
-                //        x => x.SendReminderAsync(result.AppointmentId.Value),
-                //        reminderTime);
-                //}
-            }
-            catch (Exception ex)
-            {
-                throw new Exception(ex.InnerException?.Message ?? ex.Message);
-            }
-        }
+   
 
         public async Task CancelAppointment(int appointmentId, ClaimsPrincipal user)
         {
@@ -112,6 +66,21 @@ namespace SmartTeethCare.Service.PatientModule
 
             if (target.Date <= DateTime.Now.AddHours(1))
                 throw new Exception("Cannot cancel appointment less than 1 hour before it starts.");
+
+            // Refund logic
+            if (target.PaymentStatus == AppointmentPaymentStatus.Paid && !string.IsNullOrEmpty(target.PaymentIntentId))
+            {
+                var appointmentTimeUtc = target.Date.Date + target.StartTime;
+                // If more than 24 hours
+                if ((appointmentTimeUtc - DateTime.UtcNow).TotalHours >= 24)
+                {
+                    bool refunded = await _paymentService.RefundPayment(target.PaymentIntentId);
+                    if (refunded)
+                    {
+                        target.PaymentStatus = AppointmentPaymentStatus.Refunded;
+                    }
+                }
+            }
 
             target.Status = AppointmentStatus.Cancelled;
             await _notificationService.CreateAsync(

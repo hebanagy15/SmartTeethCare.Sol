@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using SmartTeethCare.API.Errors;
 using SmartTeethCare.Core.DTOs.DoctorModule;
@@ -109,5 +109,33 @@ public class DoctorScheduleController : ControllerBase
 
         await _scheduleService.AddScheduleAsync(dto);
         return Ok(new { message = "Schedule added successfully" });
+    }
+
+    [Authorize(Roles = "Admin, Doctor")]
+    [HttpDelete("{id}")]
+    public async Task<IActionResult> DeleteSchedule(int id)
+    {
+        var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (string.IsNullOrEmpty(userId))
+            return Unauthorized("Invalid token");
+
+        bool isAdmin = User.IsInRole("Admin");
+        try
+        {
+            await _scheduleService.DeleteScheduleAsync(id, userId, isAdmin);
+            return Ok(new { message = "Schedule deleted successfully" });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new ApiResponse(400, ex.Message));
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(new ApiResponse(404, ex.Message));
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            return StatusCode(403, new ApiResponse(403, ex.Message));
+        }
     }
 }
