@@ -11,6 +11,6 @@ namespace SmartTeethCare.Core.Interfaces.Services.AiService
     public interface IAiService
     {
         Task<PredictResponseDto> PredictAsync(IFormFile image);
-        Task<string> ChatAsync(string disease, string message);
+        Task<ChatResponseDto> ChatAsync(ChatRequestDto dto);
     }
 }

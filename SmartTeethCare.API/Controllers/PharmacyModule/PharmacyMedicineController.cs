@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Mvc;
 using SmartTeethCare.Core.DTOs.Pharmacy;
 using SmartTeethCare.Core.Interfaces.Services.Pharmacy;
+using SmartTeethCare.Service.Pharmacy;
 
 namespace SmartTeethCare.API.Controllers.PharmacyModule
 {
@@ -60,6 +61,13 @@ namespace SmartTeethCare.API.Controllers.PharmacyModule
         {
             await _service.DeleteAsync(pharmacyId, medicineId);
             return Ok(new { message = "Deleted successfully." });
+        }
+        [Authorize]
+        [HttpGet("{pharmacyId}/medicines")]
+        public async Task<IActionResult> GetMedicinesByPharmacy(int pharmacyId)
+        {
+            var result = await _service.GetMedicinesByPharmacyAsync(pharmacyId);
+            return Ok(result);
         }
     }
 }

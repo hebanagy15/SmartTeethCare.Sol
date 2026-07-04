@@ -51,14 +51,15 @@ namespace SmartTeethCare.API.Controllers.MedicalRecord
 
             return Ok(result);
         }
-
-
+        [Authorize]
         [HttpGet("details/{id}")]
         public async Task<IActionResult> GetMedicalRecordsDetails(int id)
         {
-            var result = await _service.GetDetailsAsync(id);
+            var result = await _service.GetDetailsAsync(id, User);
+
             if (result == null)
                 return NotFound("Medical record not found.");
+
             return Ok(result);
         }
     }

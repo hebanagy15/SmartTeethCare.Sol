@@ -34,12 +34,11 @@ namespace SmartTeethCare.API.Controllers
             return Ok(new { message = "Prescription created successfully" });
         }
 
+        [Authorize(Roles = "Doctor")]
         [HttpGet("patient/{patientId}")]
-        public async Task<IActionResult> GetPatientPrescriptions(int patientId)
+        public async Task<IActionResult> GetByPatient(int patientId)
         {
-            var result = await _prescriptionService
-                .GetPrescriptionsByPatientIdAsync(patientId);
-
+            var result = await _prescriptionService.GetPrescriptionsByPatientIdAsync(patientId, User);
             return Ok(result);
         }
     }

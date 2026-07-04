@@ -75,23 +75,54 @@ namespace SmartTeethCare.Service.PatientModule
             var fullName = $"{dto.FirstName} {dto.LastName}".Trim();
 
             user.DisplayName = fullName;
-            user.UserName = fullName.Replace(" ", "").ToLower();
+            user.UserName = fullName.Replace(" ", "").ToLowerInvariant();
 
             user.PhoneNumber = dto.Phone;
             user.Address = dto.Address;
             user.Gender = dto.Gender;
             user.DateOfBirth = dto.DateOfBirth;
-            user.UpdatedAt = DateTime.Now;
+            user.UpdatedAt = DateTime.UtcNow;
 
-            // رفع الصورة
             if (dto.ProfileImage != null && dto.ProfileImage.Length > 0)
             {
+                const long maxFileSize = 2 * 1024 * 1024; // 2 MB
+
+                if (dto.ProfileImage.Length > maxFileSize)
+                    throw new Exception("Image size must not exceed 2 MB.");
+
+                var allowedExtensions = new[] { ".jpg", ".jpeg", ".png", ".webp" };
+                var extension = Path.GetExtension(dto.ProfileImage.FileName).ToLowerInvariant();
+
+                if (!allowedExtensions.Contains(extension))
+                    throw new Exception("Only JPG, JPEG, PNG and WEBP images are allowed.");
+
+                var allowedContentTypes = new[]
+                {
+            "image/jpeg",
+            "image/png",
+            "image/webp"
+        };
+
+                if (!allowedContentTypes.Contains(dto.ProfileImage.ContentType.ToLowerInvariant()))
+                    throw new Exception("Invalid image type.");
+
+                // حذف الصورة القديمة إن وجدت
+                if (!string.IsNullOrWhiteSpace(patient.ProfileImageUrl))
+                {
+                    var oldImagePath = Path.Combine(
+                        _environment.WebRootPath,
+                        patient.ProfileImageUrl.TrimStart('/').Replace('/', Path.DirectorySeparatorChar));
+
+                    if (File.Exists(oldImagePath))
+                        File.Delete(oldImagePath);
+                }
+
                 var folder = Path.Combine(_environment.WebRootPath, "ProfileImages");
 
                 if (!Directory.Exists(folder))
                     Directory.CreateDirectory(folder);
 
-                var fileName = Guid.NewGuid() + Path.GetExtension(dto.ProfileImage.FileName);
+                var fileName = $"{Guid.NewGuid()}{extension}";
                 var filePath = Path.Combine(folder, fileName);
 
                 using (var stream = new FileStream(filePath, FileMode.Create))
@@ -99,7 +130,7 @@ namespace SmartTeethCare.Service.PatientModule
                     await dto.ProfileImage.CopyToAsync(stream);
                 }
 
-                patient.ProfileImageUrl = "/ProfileImages/" + fileName;
+                patient.ProfileImageUrl = $"/ProfileImages/{fileName}";
             }
 
             var result = await _userManager.UpdateAsync(user);

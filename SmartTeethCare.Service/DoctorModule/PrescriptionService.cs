@@ -4,6 +4,7 @@ using SmartTeethCare.Core.DTOs.PatientModule;
 using SmartTeethCare.Core.Entities;
 using SmartTeethCare.Core.Interfaces.Services;
 using SmartTeethCare.Core.Interfaces.UnitOfWork;
+using System.Security.Claims;
 
 namespace SmartTeethCare.Service.Implementation
 {
@@ -82,16 +83,27 @@ namespace SmartTeethCare.Service.Implementation
             await _unitOfWork.CompleteAsync();
         }
 
-        public async Task<List<PrescriptionDetailsDTO>>
-            GetPrescriptionsByPatientIdAsync(int patientId)
+        public async Task<List<PrescriptionDetailsDTO>> GetPrescriptionsByPatientIdAsync(int patientId,ClaimsPrincipal user)
         {
+            var userId = user.FindFirstValue(ClaimTypes.NameIdentifier)
+                ?? throw new Exception("User not authenticated");
+
+            var doctor = (await _unitOfWork.Repository<Doctor>()
+                .FindAsync(d => d.UserId == userId))
+                .FirstOrDefault();
+
+            if (doctor == null)
+                throw new Exception("Doctor not found");
+
             var prescriptions = await _unitOfWork
                 .Repository<Prescription>()
                 .FindAsync(
-                    p => p.PatientId == patientId,
+                    p => p.PatientId == patientId && p.DoctorId == doctor.Id,
                     q => q
-                        .Include(p => p.doctor).ThenInclude(d => d.User)
-                        .Include(p => p.Patient).ThenInclude(p => p.User)
+                        .Include(p => p.doctor)
+                            .ThenInclude(d => d.User)
+                        .Include(p => p.Patient)
+                            .ThenInclude(p => p.User)
                         .Include(p => p.PrescriptionMedicines)
                             .ThenInclude(pm => pm.Medicine)
                 );
@@ -100,8 +112,15 @@ namespace SmartTeethCare.Service.Implementation
             {
                 PrescriptionId = p.Id,
                 Date = p.Date,
-                DoctorName = p.doctor.User.DisplayName ?? p.doctor.User.UserName,
-                PatientName = p.Patient.User.DisplayName ?? p.Patient.User.UserName,
+
+                DoctorName = string.IsNullOrWhiteSpace(p.doctor.User.DisplayName)
+                    ? p.doctor.User.UserName
+                    : p.doctor.User.DisplayName,
+
+                PatientName = string.IsNullOrWhiteSpace(p.Patient.User.DisplayName)
+                    ? p.Patient.User.UserName
+                    : p.Patient.User.DisplayName,
+
                 Medicines = p.PrescriptionMedicines
                     .Select(pm => new PrescriptionMedicineDetailsDto
                     {

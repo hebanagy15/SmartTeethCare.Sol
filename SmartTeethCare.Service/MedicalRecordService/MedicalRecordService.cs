@@ -3,6 +3,7 @@ using SmartTeethCare.Core.DTOs.MedicalRecordModule;
 using SmartTeethCare.Core.Entities;
 using SmartTeethCare.Core.Interfaces.Services.MedicalRecordModule;
 using SmartTeethCare.Core.Interfaces.UnitOfWork;
+using System.Security.Claims;
 
 namespace SmartTeethCare.Service.MedicalRecordModule
 {
@@ -125,8 +126,11 @@ namespace SmartTeethCare.Service.MedicalRecordModule
         }
 
 
-        public async Task<MedicalRecordDto?> GetDetailsAsync(int id)
+        public async Task<MedicalRecordDto?> GetDetailsAsync(int id, ClaimsPrincipal user)
         {
+            var userId = user.FindFirstValue(ClaimTypes.NameIdentifier)
+        ?? throw new Exception("User not authenticated");
+
             var records = await _unitOfWork.Repository<MedicalRecord>()
                 .FindAsync(
                     r => r.Id == id,
@@ -141,7 +145,34 @@ namespace SmartTeethCare.Service.MedicalRecordModule
 
             if (record == null)
                 return null;
+            if (user.IsInRole("Doctor"))
+            {
+                var doctor = (await _unitOfWork.Repository<Doctor>()
+                    .FindAsync(d => d.UserId == userId))
+                    .FirstOrDefault();
 
+                if (doctor == null)
+                    throw new Exception("Doctor not found");
+
+                if (record.DoctorId != doctor.Id)
+                    throw new UnauthorizedAccessException("You are not authorized to view this medical record.");
+            }
+            else if (user.IsInRole("Patient"))
+            {
+                var patient = (await _unitOfWork.Repository<Patient>()
+                    .FindAsync(p => p.UserId == userId))
+                    .FirstOrDefault();
+
+                if (patient == null)
+                    throw new Exception("Patient not found");
+
+                if (record.PatientId != patient.Id)
+                    throw new UnauthorizedAccessException("You are not authorized to view this medical record.");
+            }
+            else
+            {
+                throw new UnauthorizedAccessException("Invalid role.");
+            }
             return new MedicalRecordDto
             {
                 Id = record.Id,

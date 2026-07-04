@@ -96,12 +96,9 @@ namespace SmartTeethCare.API.Controllers.AiService
         [HttpPost("chat")]
         public async Task<IActionResult> Chat(ChatRequestDto dto)
         {
-            var response = await _aiService.ChatAsync(dto.Disease, dto.User_Message);
+            var response = await _aiService.ChatAsync(dto);
 
-            return Ok(new
-            {
-                Message = response
-            });
+            return Ok(response);
         }
     }
 }
