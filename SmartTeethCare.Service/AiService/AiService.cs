@@ -41,19 +41,17 @@ namespace SmartTeethCare.Service.AiService
                 });
         }
 
-        public async Task<string> ChatAsync(string disease, string message)
+        public async Task<ChatResponseDto> ChatAsync(ChatRequestDto dto)
         {
-            var request = new
+
+            var response = await _httpClient.PostAsJsonAsync("/chat", dto);
+            var body = await response.Content.ReadAsStringAsync();
+
+            if (!response.IsSuccessStatusCode)
             {
-                disease = disease,
-                user_message = message
-            };
-
-            var response = await _httpClient.PostAsJsonAsync("/chat", request);
-            response.EnsureSuccessStatusCode();
-
-            var result = await response.Content.ReadFromJsonAsync<ChatResponseDto>();
-            return result.Bot_Response;
+                throw new Exception(body);
+            }
+            return await response.Content.ReadFromJsonAsync<ChatResponseDto>();
         }
     }
 }

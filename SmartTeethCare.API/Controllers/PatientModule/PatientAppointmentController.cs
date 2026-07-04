@@ -46,7 +46,7 @@ namespace SmartTeethCare.Web.Areas.Patient.Controllers
                 return BadRequest(new { error = ex.Message });
             }
         }
-
+        [Authorize(Roles = "Patient")]
         [HttpGet("GetAppointmentDetails/{appointmentId}")]
         public async Task<IActionResult> GetAppointmentDetails(int appointmentId)
         {

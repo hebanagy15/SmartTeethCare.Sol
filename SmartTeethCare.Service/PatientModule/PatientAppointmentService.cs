@@ -125,16 +125,15 @@ namespace SmartTeethCare.Service.PatientModule
 
         public async Task<AppointmentDetailsDTO> GetAppointmentDetails(int appointmentId, ClaimsPrincipal user)
         {
-            var userId = user.FindFirstValue(ClaimTypes.NameIdentifier) ?? throw new Exception("User not authenticated");
+            var userId = user.FindFirstValue(ClaimTypes.NameIdentifier)
+                ?? throw new Exception("User not authenticated");
 
-            var patients = await _uow.Repository<Patient>()
-                .FindAsync(p => p.UserId == userId);
+            var patient = (await _uow.Repository<Patient>()
+                .FindAsync(p => p.UserId == userId))
+                .FirstOrDefault();
 
-            var _patient = patients.FirstOrDefault();
-            if (_patient == null)
+            if (patient == null)
                 throw new Exception("Patient not found");
-
-            var patientId = _patient.Id;
 
             var appointment = (await _uow.Repository<Appointment>()
                 .FindAsync(a => a.Id == appointmentId))
@@ -143,32 +142,39 @@ namespace SmartTeethCare.Service.PatientModule
             if (appointment == null)
                 throw new Exception("Appointment not found");
 
-            var doctor = await _uow.Repository<Doctor>().GetByIdAsync(appointment.DoctorID);
-            var patient = await _uow.Repository<Patient>().GetByIdAsync(appointment.PatientID);
+            // Security Check
+            if (appointment.PatientID != patient.Id)
+                throw new UnauthorizedAccessException("You are not authorized to view this appointment.");
 
-            var doctorUser = await _userManager.FindByIdAsync(doctor.UserId);
+            var doctor = await _uow.Repository<Doctor>()
+                .GetByIdAsync(appointment.DoctorID);
+
+            var doctorUser = doctor != null
+                ? await _userManager.FindByIdAsync(doctor.UserId)
+                : null;
+
             var patientUser = await _userManager.FindByIdAsync(patient.UserId);
 
-            var doctorName = doctorUser?.UserName;
-            var patientName = patientUser?.UserName;
-
-            var dto = new AppointmentDetailsDTO
+            return new AppointmentDetailsDTO
             {
                 Id = appointment.Id,
                 DoctorId = appointment.DoctorID,
-                DoctorName = doctorUser?.UserName ?? "Unknown",
+                DoctorName = string.IsNullOrWhiteSpace(doctorUser?.DisplayName)
+                    ? doctorUser?.UserName ?? "Unknown"
+                    : doctorUser.DisplayName,
+
                 PatientId = appointment.PatientID,
-                PatientName = patientUser?.UserName ?? "Unknown",
+                PatientName = string.IsNullOrWhiteSpace(patientUser?.DisplayName)
+                    ? patientUser?.UserName ?? "Unknown"
+                    : patientUser.DisplayName,
+
                 Date = appointment.Date,
-                StartTime = appointment.StartTime,       
-                EndTime = appointment.EndTime,           
+                StartTime = appointment.StartTime,
+                EndTime = appointment.EndTime,
                 Status = appointment.Status.ToString(),
                 CreatedAt = appointment.CreatedAt
             };
-
-            return dto;
         }
 
-         
     }
 }
