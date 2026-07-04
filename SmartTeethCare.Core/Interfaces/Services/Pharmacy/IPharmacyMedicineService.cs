@@ -18,5 +18,6 @@ namespace SmartTeethCare.Core.Interfaces.Services.Pharmacy
         Task UpdateAsync(UpdatePharmacyMedicineDto dto);
 
         Task DeleteAsync(int pharmacyId, int medicineId);
+     
     }
 }

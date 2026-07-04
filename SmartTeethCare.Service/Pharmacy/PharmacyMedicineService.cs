@@ -135,6 +135,8 @@ namespace SmartTeethCare.Service.Pharmacy
             await _unitOfWork.Repository<PharmacyMedicine>().DeleteAsync(pharmacyMedicine);
             await _unitOfWork.CompleteAsync();
         }
+
+
     }
 
     }

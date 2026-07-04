@@ -14,7 +14,7 @@ namespace SmartTeethCare.Core.Interfaces.Services.AdminModule
         Task AddDoctorAsync(CreateDoctorDto dto);
         Task UpdateDoctorAsync(int id, UpdateDoctorDto dto);
         Task DeleteDoctorAsync(int id);
-        Task ToggleDoctorStatusAsync(int id);
+        Task ToggleDoctorStatusAsync(int id, bool cancelAppointments = false);
     }
 
 }

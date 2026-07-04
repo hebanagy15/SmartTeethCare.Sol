@@ -187,7 +187,7 @@ namespace SmartTeethCare.Service.AdminModule
             await _unitOfWork.CompleteAsync();
         }
 
-        public async Task ToggleDoctorStatusAsync(int id)
+        public async Task ToggleDoctorStatusAsync(int id, bool cancelAppointments = false)
         {
             var doctor = await _unitOfWork.Repository<Doctor>()
                 .FindAsync(
@@ -213,7 +213,36 @@ namespace SmartTeethCare.Service.AdminModule
             }
             else
             {
-                // Disable
+                // جيب كل المواعيد المستقبلية
+                var futureAppointments = (await _unitOfWork.Repository<Appointment>()
+                    .FindAsync(a =>
+                        a.DoctorID == id &&
+                        a.Date.Date >= DateTime.Today &&
+                        a.Status != AppointmentStatus.Completed &&
+                        a.Status != AppointmentStatus.Cancelled &&
+                        a.Status != AppointmentStatus.Rejected))
+                    .ToList();
+
+                // لو فيه مواعيد ولسه الأدمن مأكدش
+                if (futureAppointments.Any() && !cancelAppointments)
+                {
+                    throw new Exception(
+                        $"Doctor has {futureAppointments.Count} upcoming appointments. " +
+                        $"Call again with cancelAppointments=true to cancel them and disable the doctor.");
+                }
+
+                // إلغاء المواعيد لو الأدمن أكد
+                if (cancelAppointments)
+                {
+                    foreach (var appointment in futureAppointments)
+                    {
+                        appointment.Status = AppointmentStatus.Cancelled;
+                        await _unitOfWork.Repository<Appointment>()
+                            .UpdateAsync(appointment);
+                    }
+                }
+
+                // Disable الحساب
                 user.LockoutEnd = DateTimeOffset.MaxValue;
                 doctorEntity.IsActive = false;
 
@@ -231,3 +260,4 @@ namespace SmartTeethCare.Service.AdminModule
         }
     }
 }
+        

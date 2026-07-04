@@ -46,11 +46,15 @@ namespace SmartTeethCare.API.Controllers.AdminModule
             return Ok();
         }
 
-        [HttpPatch("{id}/toggle-status")]
-        public async Task<IActionResult> ToggleStatus(int id)
+        [HttpPut("toggle-status/{id}")]
+        public async Task<IActionResult> ToggleDoctorStatus(int id, bool cancelAppointments = false)
         {
-            await _service.ToggleDoctorStatusAsync(id);
-            return Ok();
+            await _service.ToggleDoctorStatusAsync(id, cancelAppointments);
+
+            return Ok(new
+            {
+                Message = "Doctor status updated successfully."
+            });
         }
     }
 
