@@ -135,6 +135,29 @@ namespace SmartTeethCare.Service.Pharmacy
             await _unitOfWork.Repository<PharmacyMedicine>().DeleteAsync(pharmacyMedicine);
             await _unitOfWork.CompleteAsync();
         }
+
+        public async Task<IEnumerable<PharmacyMedicineDto>> GetMedicinesByPharmacyAsync(int pharmacyId)
+        {
+            var pharmacyMedicines = await _unitOfWork
+                .Repository<PharmacyMedicine>()
+                .FindAsync(
+                    pm => pm.PharmacyID == pharmacyId,
+                    q => q
+                        .Include(pm => pm.Pharmacy)
+                        .Include(pm => pm.Medicine));
+
+            return pharmacyMedicines.Select(pm => new PharmacyMedicineDto
+            {
+                Id = pm.Id,
+                PharmacyID = pm.PharmacyID,
+                PharmacyName = pm.Pharmacy.Name,
+                MedicineID = pm.MedicineID,
+                MedicineName = pm.Medicine.Name,
+                Price = pm.Medicine.Price,
+                StockQuantity = pm.StockQuantity
+            });
+        }
     }
 
-    }
+
+}
