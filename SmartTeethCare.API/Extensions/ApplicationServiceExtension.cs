@@ -71,6 +71,7 @@ namespace SmartTeethCare.API.Extensions
             services.AddScoped<IMedicalRecordService, MedicalRecordService>();
             services.AddScoped<SlotCleanupJob>();
             services.AddScoped<IPharmacyService, PharmacyService>();
+            services.AddScoped<IPharmacyMedicineService, PharmacyMedicineService>();
             return services;
         }
     }
