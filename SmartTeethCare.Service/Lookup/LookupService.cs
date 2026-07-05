@@ -22,6 +22,7 @@ namespace SmartTeethCare.Service.Lookup
                 include: q => q
                     .Include(d => d.User)
                     .Include(d => d.Speciality)
+                    .Include(d => d.Reviews)
             );
 
             return doctors.Select(d => new DoctorDTO
@@ -32,7 +33,9 @@ namespace SmartTeethCare.Service.Lookup
                 SpecializationName = d.Speciality?.Name ?? "No Specialization",
                 ConsultationFee = d.ConsultationFee,
                 YearsOfExperience = d.YearsOfExperience,
-                ImageUrl = d.ImageUrl
+                ImageUrl = d.ImageUrl,
+                AverageRating = d.Reviews.Any() ? Math.Round(d.Reviews.Average(r => r.Rating), 1) : 0,
+                TotalReviews = d.Reviews.Count()
             });
         }
 
@@ -43,6 +46,7 @@ namespace SmartTeethCare.Service.Lookup
                 include: q => q
                     .Include(d => d.User)
                     .Include(d => d.Speciality)
+                    .Include(d => d.Reviews)
             );
 
             return doctors.Select(d => new DoctorDTO
@@ -53,8 +57,11 @@ namespace SmartTeethCare.Service.Lookup
                 SpecializationName = d.Speciality?.Name ?? "No Specialization",
                 ConsultationFee = d.ConsultationFee,
                 YearsOfExperience = d.YearsOfExperience,
-                ImageUrl = d.ImageUrl
-            });
+                ImageUrl = d.ImageUrl,
+                AverageRating = d.Reviews.Any() ? Math.Round(d.Reviews.Average(r => r.Rating), 1) : 0,
+                TotalReviews = d.Reviews.Count()
+            
+        });
         }
 
         public async Task<IEnumerable<SpecializationDTO>> GetSpecializationsAsync()

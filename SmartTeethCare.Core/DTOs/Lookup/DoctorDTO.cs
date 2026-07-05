@@ -15,5 +15,9 @@ namespace SmartTeethCare.Core.DTOs.Lookup
         public decimal? ConsultationFee { get; set; }
         public int? YearsOfExperience { get; set; }
         public string? ImageUrl { get; set; }
+
+        public double AverageRating { get; set; }
+
+        public int TotalReviews { get; set; }
     }
 }
