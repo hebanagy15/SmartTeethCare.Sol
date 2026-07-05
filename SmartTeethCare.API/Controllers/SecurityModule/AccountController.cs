@@ -1,4 +1,5 @@
 ﻿
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using SmartTeethCare.API.DTOs;
@@ -8,6 +9,7 @@ using SmartTeethCare.Core.Interfaces.Services.SecurityModule;
 using SmartTeethCare.Core.Interfaces.UnitOfWork;
 using SmartTeethCare.Repository.Data;
 using SmartTeethCare.Service.SecurityModule;
+using System.Security.Claims;
 using System.Security.Cryptography;
 
 namespace SmartTeethCare.API.Controllers.SecurityModule
@@ -223,6 +225,20 @@ namespace SmartTeethCare.API.Controllers.SecurityModule
         {
             await _authService.ResetPasswordAsync(dto);
             return Ok("Password reset successfully.");
+        }
+
+        [Authorize]
+        [HttpPut("change-password")]
+        public async Task<IActionResult> ChangePassword(ChangePasswordDTO dto)
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            await _authService.ChangePasswordAsync(userId, dto);
+
+            return Ok(new
+            {
+                message = "Password changed successfully."
+            });
         }
 
         [HttpPost("logout")]

@@ -190,6 +190,28 @@ namespace SmartTeethCare.Service.SecurityModule
                 throw new Exception($"Password reset failed: {errors}");
             }
         }
+
+        public async Task ChangePasswordAsync(string userId, ChangePasswordDTO dto)
+        {
+            var user = await _userManager.FindByIdAsync(userId);
+
+            if (user == null)
+                throw new Exception("User not found");
+
+            if (dto.NewPassword != dto.ConfirmPassword)
+                throw new Exception("Password confirmation does not match.");
+
+            var result = await _userManager.ChangePasswordAsync(
+                user,
+                dto.CurrentPassword,
+                dto.NewPassword);
+
+            if (!result.Succeeded)
+            {
+                var errors = string.Join(", ", result.Errors.Select(e => e.Description));
+                throw new Exception(errors);
+            }
+        }
     }
 }
 

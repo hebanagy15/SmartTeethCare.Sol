@@ -17,5 +17,6 @@ namespace SmartTeethCare.Core.Interfaces.Services.SecurityModule
         Task ConfirmEmailAsync(ConfirmEmailDTO dto);
         Task ForgotPasswordAsync(ForgotPasswordDTO dto);
         Task ResetPasswordAsync(ResetPasswordDTO dto);
+        Task ChangePasswordAsync(string userId, ChangePasswordDTO dto);
     }
 }
