@@ -1,6 +1,9 @@
 ﻿using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using SmartTeethCare.Core.DTOs.AdminModule;
+using SmartTeethCare.Core.DTOs.DoctorModule;
+using SmartTeethCare.Core.DTOs.MedicalRecordModule;
+using SmartTeethCare.Core.DTOs.PatientModule;
 using SmartTeethCare.Core.Entities;
 using SmartTeethCare.Core.Enums;
 using SmartTeethCare.Core.Interfaces.Services.AdminModule;
@@ -258,6 +261,85 @@ namespace SmartTeethCare.Service.AdminModule
             await _unitOfWork.Repository<Doctor>().UpdateAsync(doctorEntity);
             await _unitOfWork.CompleteAsync();
         }
+        public async Task<IEnumerable<MedicalRecordDto>> GetDoctorMedicalRecordsAsync(int doctorId)
+        {
+            var doctor = await _unitOfWork.Repository<Doctor>()
+                .GetByIdAsync(doctorId);
+
+            if (doctor == null)
+                throw new Exception("Doctor not found");
+
+            var records = await _unitOfWork.Repository<MedicalRecord>()
+                .FindAsync(
+                    r => r.DoctorId == doctorId,
+                    include: q => q
+                        .Include(r => r.Doctor)
+                            .ThenInclude(d => d.User)
+                        .Include(r => r.Patient)
+                            .ThenInclude(p => p.User));
+
+            return records.Select(r => new MedicalRecordDto
+            {
+                Id = r.Id,
+                DoctorName = string.IsNullOrWhiteSpace(r.Doctor.User.DisplayName)
+                    ? r.Doctor.User.UserName
+                    : r.Doctor.User.DisplayName,
+
+                PatientName = string.IsNullOrWhiteSpace(r.Patient.User.DisplayName)
+                    ? r.Patient.User.UserName
+                    : r.Patient.User.DisplayName,
+
+                Diagnosis = r.Diagnosis ?? string.Empty,
+                Notes = r.Notes ?? string.Empty,
+                CreatedAt = r.CreatedAt
+            });
+        }
+
+        public async Task<IEnumerable<PrescriptionDetailsDTO>> GetDoctorPrescriptionsAsync(int doctorId)
+        {
+            var doctor = await _unitOfWork.Repository<Doctor>()
+                .GetByIdAsync(doctorId);
+
+            if (doctor == null)
+                throw new Exception("Doctor not found");
+
+            var prescriptions = await _unitOfWork.Repository<Prescription>()
+                .FindAsync(
+                    p => p.DoctorId == doctorId,
+                    include: q => q
+                        .Include(p => p.doctor)
+                            .ThenInclude(d => d.User)
+                        .Include(p => p.Patient)
+                            .ThenInclude(p => p.User)
+                        .Include(p => p.PrescriptionMedicines)
+                            .ThenInclude(pm => pm.Medicine));
+
+            return prescriptions.Select(p => new PrescriptionDetailsDTO
+            {
+                PrescriptionId = p.Id,
+                Date = p.Date,
+
+                DoctorName = string.IsNullOrWhiteSpace(p.doctor.User.DisplayName)
+                    ? p.doctor.User.UserName
+                    : p.doctor.User.DisplayName,
+
+                PatientName = string.IsNullOrWhiteSpace(p.Patient.User.DisplayName)
+                    ? p.Patient.User.UserName
+                    : p.Patient.User.DisplayName,
+
+                Medicines = p.PrescriptionMedicines
+                    .Select(pm => new PrescriptionMedicineDetailsDto
+                    {
+                        MedicineName = pm.Medicine.Name,
+                        Dosage = pm.Dosage,
+                        Frequency = pm.Frequency,
+                        DurationInDays = pm.DurationInDays,
+                        Quantity = pm.Quantity,
+                        Instructions = pm.Instructions
+                    }).ToList()
+            });
+        }
     }
+
 }
         

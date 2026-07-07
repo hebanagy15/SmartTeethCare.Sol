@@ -56,6 +56,23 @@ namespace SmartTeethCare.API.Controllers.AdminModule
                 Message = "Doctor status updated successfully."
             });
         }
+
+
+        [HttpGet("{doctorId}/medical-records")]
+        public async Task<IActionResult> GetDoctorMedicalRecords(int doctorId)
+        {
+            var result = await _service.GetDoctorMedicalRecordsAsync(doctorId);
+
+            return Ok(result);
+        }
+
+        [HttpGet("{doctorId}/prescriptions")]
+        public async Task<IActionResult> GetDoctorPrescriptions(int doctorId)
+        {
+            var result = await _service.GetDoctorPrescriptionsAsync(doctorId);
+
+            return Ok(result);
+        }
     }
 
 }
