@@ -1,4 +1,4 @@
-﻿using SmartTeethCare.Core.DTOs.DoctorModule;
+using SmartTeethCare.Core.DTOs.DoctorModule;
 using SmartTeethCare.Core.Entities;
 using SmartTeethCare.Core.Enums;
 using SmartTeethCare.Core.Interfaces.Services.DoctorModule;
@@ -72,7 +72,8 @@ namespace SmartTeethCare.Service.DoctorModule
                     a.DoctorID == dto.DoctorId &&
                     a.Date.Date == dto.Date.Date &&
                     a.StartTime == dto.StartTime &&
-                    a.Status != AppointmentStatus.Rejected);
+                    a.Status != AppointmentStatus.Rejected &&
+                    a.Status != AppointmentStatus.Cancelled);
 
             if (existingAppointments.Any())
             {

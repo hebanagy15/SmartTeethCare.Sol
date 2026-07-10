@@ -70,7 +70,8 @@ namespace SmartTeethCare.Service.Services.Stripe
                 a.DoctorID == request.DoctorId &&
                 a.Date.Date == request.Date.Date &&
                 a.StartTime == request.StartTime &&
-                a.Status != AppointmentStatus.Rejected);
+                a.Status != AppointmentStatus.Rejected &&
+                a.Status != AppointmentStatus.Cancelled);
 
             if (booked.Any())
                 throw new InvalidOperationException("هذا الموعد محجوز بالفعل، يرجى اختيار موعد آخر");
