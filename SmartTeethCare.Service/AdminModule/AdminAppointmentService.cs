@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using SmartTeethCare.Core.DTOs.AdminModule;
 using SmartTeethCare.Core.DTOs.DoctorModule;
 using SmartTeethCare.Core.DTOs.PatientModule;
@@ -6,6 +6,7 @@ using SmartTeethCare.Core.Entities;
 using SmartTeethCare.Core.Enums;
 using SmartTeethCare.Core.Interfaces.Services.AdminModule;
 using SmartTeethCare.Core.Interfaces.Services.DoctorModule;
+using SmartTeethCare.Core.Interfaces.Services.Stripe;
 using SmartTeethCare.Core.Interfaces.UnitOfWork;
 using System;
 using System.Collections.Generic;
@@ -18,11 +19,13 @@ namespace SmartTeethCare.Services.AppointmentModule
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly IAppointmentBookingService _bookingService;
+        private readonly IPaymentService _paymentService;
 
-        public AdminAppointmentService(IUnitOfWork unitOfWork, IAppointmentBookingService bookingService)
+        public AdminAppointmentService(IUnitOfWork unitOfWork, IAppointmentBookingService bookingService, IPaymentService paymentService)
         {
             _unitOfWork = unitOfWork;
             _bookingService = bookingService;
+            _paymentService = paymentService;
         }
 
         // ---------------- Create ----------------
@@ -168,6 +171,15 @@ namespace SmartTeethCare.Services.AppointmentModule
             if (appointment.Status == AppointmentStatus.Completed)
                 throw new Exception("Cannot cancel completed appointment");
 
+            if (appointment.PaymentStatus == AppointmentPaymentStatus.Paid && !string.IsNullOrEmpty(appointment.PaymentIntentId))
+            {
+                bool refunded = await _paymentService.RefundPayment(appointment.PaymentIntentId);
+                if (refunded)
+                {
+                    appointment.PaymentStatus = AppointmentPaymentStatus.Refunded;
+                }
+            }
+
             appointment.Status = AppointmentStatus.Cancelled;
 
             await _unitOfWork.Repository<Appointment>().UpdateAsync(appointment);
@@ -182,6 +194,17 @@ namespace SmartTeethCare.Services.AppointmentModule
 
             if (appointment.Status == AppointmentStatus.Completed || appointment.Status == AppointmentStatus.Cancelled)
                 throw new Exception("Cannot modify completed or cancelled appointment");
+
+            if ((newStatus == AppointmentStatus.Cancelled || newStatus == AppointmentStatus.Rejected) &&
+                appointment.PaymentStatus == AppointmentPaymentStatus.Paid && 
+                !string.IsNullOrEmpty(appointment.PaymentIntentId))
+            {
+                bool refunded = await _paymentService.RefundPayment(appointment.PaymentIntentId);
+                if (refunded)
+                {
+                    appointment.PaymentStatus = AppointmentPaymentStatus.Refunded;
+                }
+            }
 
             appointment.Status = newStatus;
 
