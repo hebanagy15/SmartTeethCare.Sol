@@ -87,9 +87,18 @@ namespace SmartTeethCare.Service.Services.Stripe
                 throw new InvalidOperationException(
                     "هذا الموعد محجوز مؤقتاً، يرجى الانتظار 10 دقائق أو اختيار موعد آخر");
 
+            var doctorRepo = _unitOfWork.Repository<Doctor>();
+            var doctor = await doctorRepo.GetByIdAsync(request.DoctorId);
+            if (doctor == null)
+                throw new InvalidOperationException("Doctor not found");
+
+            long amountToCharge = doctor.ConsultationFee.HasValue 
+                ? (long)(doctor.ConsultationFee.Value * 100) 
+                : 50 * 100;
+
             var options = new PaymentIntentCreateOptions
             {
-                Amount = 50 * 100,
+                Amount = amountToCharge,
                 Currency = "egp",
                 AutomaticPaymentMethods = new PaymentIntentAutomaticPaymentMethodsOptions
                 {
