@@ -1,8 +1,10 @@
-﻿using Hangfire;
+using Hangfire;
 using Microsoft.AspNetCore.StaticFiles;
 using SmartTeethCare.API.Extensions;
 using SmartTeethCare.API.Middlewares;
 using SmartTeethCare.Service.Jobs;
+using Microsoft.AspNetCore.RateLimiting;
+using System.Threading.RateLimiting;
 
 namespace SmartTeethCare.API
 {
@@ -22,6 +24,35 @@ namespace SmartTeethCare.API
                             new System.Text.Json.Serialization.JsonStringEnumConverter()
                         );
                     });
+
+            builder.Services.AddRateLimiter(options =>
+            {
+                options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+                
+                // Policy for Auth (Login, Register, etc.) - allows more requests per IP for shared networks
+                options.AddPolicy("AuthPolicy", httpContext =>
+                    RateLimitPartition.GetFixedWindowLimiter(
+                        partitionKey: httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+                        factory: partition => new FixedWindowRateLimiterOptions
+                        {
+                            AutoReplenishment = true,
+                            PermitLimit = 30,
+                            QueueLimit = 0,
+                            Window = TimeSpan.FromMinutes(1)
+                        }));
+
+                // Policy for AI and Chatbot - more strict because these operations are expensive
+                options.AddPolicy("AiPolicy", httpContext =>
+                    RateLimitPartition.GetFixedWindowLimiter(
+                        partitionKey: httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+                        factory: partition => new FixedWindowRateLimiterOptions
+                        {
+                            AutoReplenishment = true,
+                            PermitLimit = 10,
+                            QueueLimit = 0,
+                            Window = TimeSpan.FromMinutes(1)
+                        }));
+            });
 
 
             builder.Services.AddCorsPolicy();      // CORS (Deployment)
@@ -55,6 +86,8 @@ namespace SmartTeethCare.API
             app.UseHttpsRedirection();
             app.UseStaticFiles();
             app.UseRouting();
+
+            app.UseRateLimiter();
 
             // ���� ��� Webhook ���� ��� Body ��
 

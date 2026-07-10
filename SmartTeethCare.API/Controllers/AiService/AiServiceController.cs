@@ -1,10 +1,11 @@
-﻿using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using SmartTeethCare.Core.DTOs.AI_Services;
 using SmartTeethCare.Core.Entities;
 using SmartTeethCare.Core.Interfaces.Services.AiService;
 using SmartTeethCare.Core.Interfaces.UnitOfWork;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace SmartTeethCare.API.Controllers.AiService
 {
@@ -21,6 +22,7 @@ namespace SmartTeethCare.API.Controllers.AiService
             _unitOfWork = unitOfWork;
         }
         [HttpPost("analyze")]
+        [EnableRateLimiting("AiPolicy")]
         public async Task<IActionResult> Analyze(IFormFile image)
         {
             var result = await _aiService.PredictAsync(image);
@@ -94,6 +96,7 @@ namespace SmartTeethCare.API.Controllers.AiService
             });
         }
         [HttpPost("chat")]
+        [EnableRateLimiting("AiPolicy")]
         public async Task<IActionResult> Chat(ChatRequestDto dto)
         {
             var response = await _aiService.ChatAsync(dto);

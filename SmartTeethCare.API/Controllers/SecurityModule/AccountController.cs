@@ -11,6 +11,7 @@ using SmartTeethCare.Repository.Data;
 using SmartTeethCare.Service.SecurityModule;
 using System.Security.Claims;
 using System.Security.Cryptography;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace SmartTeethCare.API.Controllers.SecurityModule
 {
@@ -42,6 +43,7 @@ namespace SmartTeethCare.API.Controllers.SecurityModule
        
 
         [HttpPost("login")]
+        [EnableRateLimiting("AuthPolicy")]
         public async Task<ActionResult<LoginResponseDTO>> Login(LoginDTO model)
         {
             
@@ -91,6 +93,7 @@ namespace SmartTeethCare.API.Controllers.SecurityModule
         }
 
         [HttpPost("register")]
+        [EnableRateLimiting("AuthPolicy")]
         public async Task<ActionResult> Register(RegisterDTO model)
         {
             // 1) Set default role if not provided
@@ -208,6 +211,7 @@ namespace SmartTeethCare.API.Controllers.SecurityModule
         }
 
         [HttpGet("confirm-email")]
+        [EnableRateLimiting("AuthPolicy")]
         public async Task<IActionResult> ConfirmEmail([FromQuery] ConfirmEmailDTO dto)
         {
             await _authService.ConfirmEmailAsync(dto);
@@ -215,6 +219,7 @@ namespace SmartTeethCare.API.Controllers.SecurityModule
         }
 
         [HttpPost("forgot-password")]
+        [EnableRateLimiting("AuthPolicy")]
         public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordDTO dto)
         {
             await _authService.ForgotPasswordAsync(dto);
@@ -222,6 +227,7 @@ namespace SmartTeethCare.API.Controllers.SecurityModule
         }
 
         [HttpPost("reset-password")]
+        [EnableRateLimiting("AuthPolicy")]
         public async Task<IActionResult> ResetPassword(ResetPasswordDTO dto)
         {
             await _authService.ResetPasswordAsync(dto);
@@ -230,6 +236,7 @@ namespace SmartTeethCare.API.Controllers.SecurityModule
 
         [Authorize]
         [HttpPut("change-password")]
+        [EnableRateLimiting("AuthPolicy")]
         public async Task<IActionResult> ChangePassword(ChangePasswordDTO dto)
         {
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
