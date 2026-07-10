@@ -101,7 +101,19 @@ namespace SmartTeethCare.Service.DoctorModule
             };
 
             await _unitOfWork.Repository<Appointment>().AddAsync(appointment);
-            await _unitOfWork.CompleteAsync();
+            
+            try
+            {
+                await _unitOfWork.CompleteAsync();
+            }
+            catch (Microsoft.EntityFrameworkCore.DbUpdateException)
+            {
+                return new BookAppointmentResultDto
+                {
+                    Success = false,
+                    Message = "This time slot was just booked by someone else."
+                };
+            }
 
             return new BookAppointmentResultDto
             {
