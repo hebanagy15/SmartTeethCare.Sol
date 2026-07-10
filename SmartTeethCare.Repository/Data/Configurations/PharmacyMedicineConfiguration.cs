@@ -10,9 +10,10 @@ namespace SmartTeethCare.Repository.Configurations
         {
             builder.ToTable("PharmacyMedicines");
 
-            // Composite Primary Key
-            builder.HasKey(pm => new { pm.PharmacyID, pm.MedicineID });
+            builder.HasKey(pm => pm.Id);
 
+            builder.HasIndex(pm => new { pm.PharmacyID, pm.MedicineID })
+                   .IsUnique();
             // Property
             builder.Property(pm => pm.StockQuantity)
                    .IsRequired();

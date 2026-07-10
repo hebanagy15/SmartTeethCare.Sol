@@ -10,5 +10,7 @@ namespace SmartTeethCare.Core.Interfaces.Services.AdminModule
     public interface IAdminPatientService
     {
         Task<string> CreatePatientAsync(CreatePatientByAdminDTO dto);
+        Task<IEnumerable<AdminPatientDto>> GetAllAsync();
+        Task<AdminPatientDto> GetByIdAsync(int id);
     }
 }
