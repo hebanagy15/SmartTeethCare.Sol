@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using SmartTeethCare.Core.Entities;
 using System.Reflection.Emit;
@@ -13,6 +13,11 @@ namespace SmartTeethCare.Repository.Configurations
 
             // Primary Key
             builder.HasKey(a => a.Id);
+
+            // Unique constraint to prevent double booking for the same doctor, date, and time
+            builder.HasIndex(a => new { a.DoctorID, a.Date, a.StartTime })
+                   .IsUnique()
+                   .HasFilter("[Status] <> 2 AND [Status] <> 4"); // 2 = Rejected, 4 = Cancelled
 
             // Relationship with Doctor (1:N)
             builder.HasOne(a => a.doctor)

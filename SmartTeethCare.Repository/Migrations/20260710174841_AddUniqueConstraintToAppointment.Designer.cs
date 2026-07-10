@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using SmartTeethCare.Repository.Data;
 
@@ -11,9 +12,11 @@ using SmartTeethCare.Repository.Data;
 namespace SmartTeethCare.Repository.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260710174841_AddUniqueConstraintToAppointment")]
+    partial class AddUniqueConstraintToAppointment
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -554,27 +557,21 @@ namespace SmartTeethCare.Repository.Migrations
 
             modelBuilder.Entity("SmartTeethCare.Core.Entities.PharmacyMedicine", b =>
                 {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
+                    b.Property<int>("PharmacyID")
                         .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<int>("MedicineID")
                         .HasColumnType("int");
 
-                    b.Property<int>("PharmacyID")
+                    b.Property<int>("Id")
                         .HasColumnType("int");
 
                     b.Property<int>("StockQuantity")
                         .HasColumnType("int");
 
-                    b.HasKey("Id");
+                    b.HasKey("PharmacyID", "MedicineID");
 
                     b.HasIndex("MedicineID");
-
-                    b.HasIndex("PharmacyID", "MedicineID")
-                        .IsUnique();
 
                     b.ToTable("PharmacyMedicines", (string)null);
                 });

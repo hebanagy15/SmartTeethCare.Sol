@@ -64,15 +64,18 @@ namespace SmartTeethCare.Service.PatientModule
                 throw new Exception("Only pending or approved appointments can be cancelled.");
             }
 
-            if (target.Date <= DateTime.Now.AddHours(1))
+            var egyptZone = TimeZoneInfo.FindSystemTimeZoneById("Egypt Standard Time");
+            var nowInEgypt = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, egyptZone);
+            var appointmentDateTime = target.Date.Date + target.StartTime;
+
+            if (appointmentDateTime <= nowInEgypt.AddHours(1))
                 throw new Exception("Cannot cancel appointment less than 1 hour before it starts.");
 
             // Refund logic
             if (target.PaymentStatus == AppointmentPaymentStatus.Paid && !string.IsNullOrEmpty(target.PaymentIntentId))
             {
-                var appointmentTimeUtc = target.Date.Date + target.StartTime;
                 // If more than 24 hours
-                if ((appointmentTimeUtc - DateTime.UtcNow).TotalHours >= 24)
+                if ((appointmentDateTime - nowInEgypt).TotalHours >= 24)
                 {
                     bool refunded = await _paymentService.RefundPayment(target.PaymentIntentId);
                     if (refunded)

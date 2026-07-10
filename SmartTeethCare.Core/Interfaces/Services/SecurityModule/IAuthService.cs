@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity;
 using SmartTeethCare.Core.DTOs.SecurityModule;
 using SmartTeethCare.Core.Entities;
 using System;
@@ -18,5 +18,6 @@ namespace SmartTeethCare.Core.Interfaces.Services.SecurityModule
         Task ForgotPasswordAsync(ForgotPasswordDTO dto);
         Task ResetPasswordAsync(ResetPasswordDTO dto);
         Task ChangePasswordAsync(string userId, ChangePasswordDTO dto);
+        string HashToken(string token);
     }
 }

@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
@@ -61,12 +61,20 @@ namespace SmartTeethCare.Service.SecurityModule
             return new JwtSecurityTokenHandler().WriteToken(token);
         }
 
+        public string HashToken(string token)
+        {
+            using var sha256 = SHA256.Create();
+            var bytes = sha256.ComputeHash(Encoding.UTF8.GetBytes(token));
+            return Convert.ToBase64String(bytes);
+        }
+
         public async Task<AuthResponseDTO> RefreshTokenAsync(string refreshToken)
         {
+            var hashedToken = HashToken(refreshToken);
             var token = await _unitOfWork.Repository<RefreshToken>()
                 .Query()
                 .Include(r => r.User)
-                .FirstOrDefaultAsync(r => r.Token == refreshToken);
+                .FirstOrDefaultAsync(r => r.Token == hashedToken);
 
             if (token == null || token.IsRevoked || token.ExpiresOn <= DateTime.UtcNow)
                 throw new Exception("Invalid refresh token");
@@ -76,7 +84,7 @@ namespace SmartTeethCare.Service.SecurityModule
             token.RevokedOn = DateTime.UtcNow;
 
             // Generate new refresh token
-            var newRefreshToken = GenerateRefreshToken();
+            var (newRefreshToken, plainText) = GenerateRefreshToken();
             newRefreshToken.UserId = token.UserId;
             await _unitOfWork.Repository<RefreshToken>().AddAsync(newRefreshToken);
 
@@ -87,16 +95,17 @@ namespace SmartTeethCare.Service.SecurityModule
             return new AuthResponseDTO
             {
                 Token = jwt,
-                RefreshToken = newRefreshToken.Token,
+                RefreshToken = plainText,
                 Expiration = DateTime.UtcNow.AddMinutes(double.Parse(_configuration["JWT:AccessTokenExpiryInMinutes"]))
             };
         }
 
         public async Task RevokeTokenAsync(string refreshToken)
         {
+            var hashedToken = HashToken(refreshToken);
             var token = await _unitOfWork.Repository<RefreshToken>()
                 .Query()
-                .FirstOrDefaultAsync(r => r.Token == refreshToken);
+                .FirstOrDefaultAsync(r => r.Token == hashedToken);
 
             if (token != null && !token.IsRevoked)
             {
@@ -109,19 +118,21 @@ namespace SmartTeethCare.Service.SecurityModule
         }
 
 
-        private RefreshToken GenerateRefreshToken()
+        private (RefreshToken entity, string plainText) GenerateRefreshToken()
         {
             var randomBytes = new byte[64];
 
             using var rng = RandomNumberGenerator.Create();
             rng.GetBytes(randomBytes);
+            
+            var plainText = Convert.ToBase64String(randomBytes);
 
-            return new RefreshToken
+            return (new RefreshToken
             {
-                Token = Convert.ToBase64String(randomBytes),
+                Token = HashToken(plainText),
                 ExpiresOn = DateTime.UtcNow.AddDays(double.Parse(_configuration["JWT:RefreshTokenExpiryInDays"])),
                 IsRevoked = false
-            };
+            }, plainText);
         }
 
         public async Task ConfirmEmailAsync(ConfirmEmailDTO dto)
@@ -189,6 +200,21 @@ namespace SmartTeethCare.Service.SecurityModule
                 var errors = string.Join(", ", result.Errors.Select(e => e.Description));
                 throw new Exception($"Password reset failed: {errors}");
             }
+
+            var tokensToRevoke = await _unitOfWork.Repository<RefreshToken>()
+                .Query()
+                .Where(rt => rt.UserId == user.Id && !rt.IsRevoked && rt.ExpiresOn > DateTime.UtcNow)
+                .ToListAsync();
+
+            if (tokensToRevoke.Any())
+            {
+                foreach (var token in tokensToRevoke)
+                {
+                    token.IsRevoked = true;
+                    token.RevokedOn = DateTime.UtcNow;
+                }
+                await _unitOfWork.CompleteAsync();
+            }
         }
 
         public async Task ChangePasswordAsync(string userId, ChangePasswordDTO dto)
@@ -210,6 +236,21 @@ namespace SmartTeethCare.Service.SecurityModule
             {
                 var errors = string.Join(", ", result.Errors.Select(e => e.Description));
                 throw new Exception(errors);
+            }
+
+            var tokensToRevoke = await _unitOfWork.Repository<RefreshToken>()
+                .Query()
+                .Where(rt => rt.UserId == userId && !rt.IsRevoked && rt.ExpiresOn > DateTime.UtcNow)
+                .ToListAsync();
+
+            if (tokensToRevoke.Any())
+            {
+                foreach (var token in tokensToRevoke)
+                {
+                    token.IsRevoked = true;
+                    token.RevokedOn = DateTime.UtcNow;
+                }
+                await _unitOfWork.CompleteAsync();
             }
         }
     }

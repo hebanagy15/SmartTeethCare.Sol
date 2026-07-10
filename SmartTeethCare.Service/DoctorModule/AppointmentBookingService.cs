@@ -1,4 +1,4 @@
-﻿using SmartTeethCare.Core.DTOs.DoctorModule;
+using SmartTeethCare.Core.DTOs.DoctorModule;
 using SmartTeethCare.Core.Entities;
 using SmartTeethCare.Core.Enums;
 using SmartTeethCare.Core.Interfaces.Services.DoctorModule;
@@ -72,7 +72,8 @@ namespace SmartTeethCare.Service.DoctorModule
                     a.DoctorID == dto.DoctorId &&
                     a.Date.Date == dto.Date.Date &&
                     a.StartTime == dto.StartTime &&
-                    a.Status != AppointmentStatus.Rejected);
+                    a.Status != AppointmentStatus.Rejected &&
+                    a.Status != AppointmentStatus.Cancelled);
 
             if (existingAppointments.Any())
             {
@@ -100,7 +101,19 @@ namespace SmartTeethCare.Service.DoctorModule
             };
 
             await _unitOfWork.Repository<Appointment>().AddAsync(appointment);
-            await _unitOfWork.CompleteAsync();
+            
+            try
+            {
+                await _unitOfWork.CompleteAsync();
+            }
+            catch (Microsoft.EntityFrameworkCore.DbUpdateException)
+            {
+                return new BookAppointmentResultDto
+                {
+                    Success = false,
+                    Message = "This time slot was just booked by someone else."
+                };
+            }
 
             return new BookAppointmentResultDto
             {

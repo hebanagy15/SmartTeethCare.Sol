@@ -48,7 +48,8 @@ namespace SmartTeethCare.Service.DoctorModule
                 .FindAsync(a =>
                     a.DoctorID == doctorId &&
                     a.Date.Date == date.Date &&
-                    a.Status != AppointmentStatus.Rejected);
+                    a.Status != AppointmentStatus.Rejected &&
+                    a.Status != AppointmentStatus.Cancelled);
 
             // 3. اعمل Generate لكل الـ Slots
             var allSlots = new List<AvailableSlotDto>();

@@ -1,4 +1,4 @@
-﻿
+
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -60,9 +60,10 @@ namespace SmartTeethCare.API.Controllers.SecurityModule
             if (!result.Succeeded)
                 return Unauthorized("Invalid Email or Password");
             // 🔹 Generate Refresh Token
+            var plainToken = Convert.ToBase64String(RandomNumberGenerator.GetBytes(64));
             var refreshToken = new RefreshToken
             {
-                Token = Convert.ToBase64String(RandomNumberGenerator.GetBytes(64)),
+                Token = _authService.HashToken(plainToken),
                 ExpiresOn = DateTime.UtcNow.AddDays(
                     double.Parse(_configuration["JWT:RefreshTokenExpiryInDays"])
                 ),
@@ -83,7 +84,7 @@ namespace SmartTeethCare.API.Controllers.SecurityModule
                 Role = (await _userManager.GetRolesAsync(user)).FirstOrDefault(),
 
                 Token = jwt,
-                RefreshToken = refreshToken.Token,
+                RefreshToken = plainToken,
                 Expiration = DateTime.UtcNow.AddMinutes(double.Parse(_configuration["JWT:AccessTokenExpiryInMinutes"])
          )
             });
