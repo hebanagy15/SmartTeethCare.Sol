@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
@@ -189,6 +189,21 @@ namespace SmartTeethCare.Service.SecurityModule
                 var errors = string.Join(", ", result.Errors.Select(e => e.Description));
                 throw new Exception($"Password reset failed: {errors}");
             }
+
+            var tokensToRevoke = await _unitOfWork.Repository<RefreshToken>()
+                .Query()
+                .Where(rt => rt.UserId == user.Id && !rt.IsRevoked && rt.ExpiresOn > DateTime.UtcNow)
+                .ToListAsync();
+
+            if (tokensToRevoke.Any())
+            {
+                foreach (var token in tokensToRevoke)
+                {
+                    token.IsRevoked = true;
+                    token.RevokedOn = DateTime.UtcNow;
+                }
+                await _unitOfWork.CompleteAsync();
+            }
         }
 
         public async Task ChangePasswordAsync(string userId, ChangePasswordDTO dto)
@@ -210,6 +225,21 @@ namespace SmartTeethCare.Service.SecurityModule
             {
                 var errors = string.Join(", ", result.Errors.Select(e => e.Description));
                 throw new Exception(errors);
+            }
+
+            var tokensToRevoke = await _unitOfWork.Repository<RefreshToken>()
+                .Query()
+                .Where(rt => rt.UserId == userId && !rt.IsRevoked && rt.ExpiresOn > DateTime.UtcNow)
+                .ToListAsync();
+
+            if (tokensToRevoke.Any())
+            {
+                foreach (var token in tokensToRevoke)
+                {
+                    token.IsRevoked = true;
+                    token.RevokedOn = DateTime.UtcNow;
+                }
+                await _unitOfWork.CompleteAsync();
             }
         }
     }
