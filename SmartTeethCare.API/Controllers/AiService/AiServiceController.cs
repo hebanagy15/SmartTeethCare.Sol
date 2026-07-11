@@ -6,6 +6,7 @@ using SmartTeethCare.Core.Entities;
 using SmartTeethCare.Core.Interfaces.Services.AiService;
 using SmartTeethCare.Core.Interfaces.UnitOfWork;
 using Microsoft.AspNetCore.RateLimiting;
+using SmartTeethCare.Core.Attributes;
 
 namespace SmartTeethCare.API.Controllers.AiService
 {
@@ -23,7 +24,7 @@ namespace SmartTeethCare.API.Controllers.AiService
         }
         [HttpPost("analyze")]
         [EnableRateLimiting("AiPolicy")]
-        public async Task<IActionResult> Analyze(IFormFile image)
+        public async Task<IActionResult> Analyze([ImageMagicBytes] IFormFile image)
         {
             var result = await _aiService.PredictAsync(image);
 
