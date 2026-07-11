@@ -11,7 +11,7 @@ namespace SmartTeethCare.Core.DTOs.DoctorModule
     {
         public int AppointmentId { get; set; }
         public string PatientName { get; set; }
-
+        public string? PatientProfileImage { get; set; }
         public DateTime CreatedAt { get; set; }
         public DateTime AppointmentDate { get; set; }   //  يوم الكشف
         public TimeSpan StartTime { get; set; }          //  الساعة كام

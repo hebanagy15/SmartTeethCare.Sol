@@ -82,6 +82,8 @@ namespace SmartTeethCare.Service.DoctorModule
                               ?? a.patient?.User?.Email
                               ?? "Unknown",
 
+                PatientProfileImage = a.patient?.ProfileImageUrl,
+
                 CreatedAt = a.CreatedAt,
                 Status = a.Status,
                 AppointmentDate = a.Date,
