@@ -8,6 +8,7 @@ using SmartTeethCare.Core.Entities;
 using SmartTeethCare.Core.Enums;
 using SmartTeethCare.Core.Interfaces.Services.AdminModule;
 using SmartTeethCare.Core.Interfaces.UnitOfWork;
+using SmartTeethCare.Core.Interfaces.Services.NotificationService;
 
 namespace SmartTeethCare.Service.AdminModule
 {
@@ -15,13 +16,16 @@ namespace SmartTeethCare.Service.AdminModule
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly UserManager<User> _userManager;
+        private readonly INotificationService _notificationService;
 
         public AdminDoctorService(
-            IUnitOfWork unitOfWork,
-            UserManager<User> userManager)
+     IUnitOfWork unitOfWork,
+     UserManager<User> userManager,
+     INotificationService notificationService)
         {
             _unitOfWork = unitOfWork;
             _userManager = userManager;
+            _notificationService = notificationService;
         }
 
         public async Task<IEnumerable<DoctorDto>> GetAllDoctorsAsync()
@@ -159,7 +163,7 @@ namespace SmartTeethCare.Service.AdminModule
             var hasFutureAppointments = (await _unitOfWork.Repository<Appointment>()
                 .FindAsync(a =>
                     a.DoctorID == id &&
-                    a.Date.Date >= DateTime.Today &&
+                    
                     a.Status != AppointmentStatus.Cancelled &&
                     a.Status != AppointmentStatus.Completed &&
                     a.Status != AppointmentStatus.Rejected))
@@ -220,7 +224,7 @@ namespace SmartTeethCare.Service.AdminModule
                 var futureAppointments = (await _unitOfWork.Repository<Appointment>()
                     .FindAsync(a =>
                         a.DoctorID == id &&
-                        a.Date.Date >= DateTime.Today &&
+                       
                         a.Status != AppointmentStatus.Completed &&
                         a.Status != AppointmentStatus.Cancelled &&
                         a.Status != AppointmentStatus.Rejected))
@@ -240,8 +244,19 @@ namespace SmartTeethCare.Service.AdminModule
                     foreach (var appointment in futureAppointments)
                     {
                         appointment.Status = AppointmentStatus.Cancelled;
-                        await _unitOfWork.Repository<Appointment>()
-                            .UpdateAsync(appointment);
+
+                        var patient = await _unitOfWork.Repository<Patient>()
+                            .GetByIdAsync(appointment.PatientID);
+
+                        // if (patient != null)
+                        // {
+                        //     await _notificationService.CreateAsync(
+                        //         patient.UserId,
+                        //         "Appointment Cancelled",
+                        //         $"Your appointment on {appointment.Date:dd/MM/yyyy} at {appointment.StartTime} has been cancelled because your doctor is no longer available.",
+                        //         true
+                        //     );
+                        // }
                     }
                 }
 
