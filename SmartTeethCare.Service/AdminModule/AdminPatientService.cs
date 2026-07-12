@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using SmartTeethCare.Core.DTOs.AdminModule;
 using SmartTeethCare.Core.Entities;
@@ -31,7 +31,8 @@ namespace SmartTeethCare.Service.AdminModule
             {
                 UserName = dto.FullName,
                 Email = dto.Email,
-                PhoneNumber = dto.PhoneNumber
+                PhoneNumber = dto.PhoneNumber,
+                EmailConfirmed = true
             };
 
             var result = await _userManager.CreateAsync(patient, tempPassword);

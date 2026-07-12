@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using SmartTeethCare.Core.DTOs.AdminModule;
 using SmartTeethCare.Core.DTOs.DoctorModule;
@@ -86,7 +86,8 @@ namespace SmartTeethCare.Service.AdminModule
                     ? dto.FullName
                     : $"Dr. {dto.FullName}",
                 Address = dto.Address ?? "Not Provided",
-                Gender = dto.Gender ?? "Not Specified"
+                Gender = dto.Gender ?? "Not Specified",
+                EmailConfirmed = true
             };
 
             var result = await _userManager.CreateAsync(user, dto.Password);
