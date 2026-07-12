@@ -1,9 +1,12 @@
 ﻿using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using SmartTeethCare.Core.DTOs.AdminModule;
 using SmartTeethCare.Core.Entities;
 using SmartTeethCare.Core.Interfaces.Services.AdminModule;
+using SmartTeethCare.Core.Interfaces.Services.SecurityModule;
 using SmartTeethCare.Core.Interfaces.UnitOfWork;
+using SmartTeethCare.Service.SecurityModule;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -16,32 +19,87 @@ namespace SmartTeethCare.Service.AdminModule
     {
         private readonly UserManager<User> _userManager;
         private readonly IUnitOfWork _unitOfWork;
+        private readonly IEmailService _emailService;
+        private readonly IConfiguration _configuration;
 
-        public AdminPatientService(UserManager<User> userManager, IUnitOfWork unitOfWork)
+        public AdminPatientService(UserManager<User> userManager, IUnitOfWork unitOfWork,IEmailService emailService,IConfiguration configuration)
         {
             _userManager = userManager;
             _unitOfWork = unitOfWork;
+            _emailService = emailService;
+            _configuration = configuration;
         }
 
         public async Task<string> CreatePatientAsync(CreatePatientByAdminDTO dto)
         {
+            var existingEmail = await _userManager.FindByEmailAsync(dto.Email);
+
+            if (existingEmail != null)
+                throw new Exception("Email already exists.");
+
+            var existingUserName = await _userManager.FindByNameAsync(dto.Email);
+
+            if (existingUserName != null)
+                throw new Exception("Username already exists.");
+
             var tempPassword = $"Pt@{Guid.NewGuid().ToString()[..8]}";
 
-            var patient = new User
+            var user = new User
             {
-                UserName = dto.FullName,
+                UserName = dto.Email,              // يفضل يكون الإيميل
+                DisplayName = dto.FullName,
                 Email = dto.Email,
-                PhoneNumber = dto.PhoneNumber
+                PhoneNumber = dto.PhoneNumber,
+                Address = dto.Address,
+                Gender = dto.Gender,
+                DateOfBirth = dto.DateOfBirth,
+                CreatedAt = DateTime.Now,
+                UpdatedAt = DateTime.Now
             };
 
-            var result = await _userManager.CreateAsync(patient, tempPassword);
+            var result = await _userManager.CreateAsync(user, tempPassword);
 
             if (!result.Succeeded)
-                throw new Exception(result.Errors.First().Description);
+            {
+                var errors = string.Join(Environment.NewLine,
+                    result.Errors.Select(e => e.Description));
 
-            await _userManager.AddToRoleAsync(patient, "Patient");
+                throw new Exception(errors);
+            }
 
-            return tempPassword; 
+            await _userManager.AddToRoleAsync(user, "Patient");
+
+            // Generate confirmation token
+            var token = await _userManager.GenerateEmailConfirmationTokenAsync(user);
+
+            // Encode token for URL
+            token = Uri.EscapeDataString(token);
+
+            // Confirmation URL
+            var confirmLink =
+                $"{_configuration["AppSettings:BaseUrl"]}/api/Account/confirm-email?userId={user.Id}&token={token}";
+
+            // Send confirmation email
+            await _emailService.SendTemplateEmailAsync(
+                user.Email!,
+                "Confirm your email",
+                "EmailConfirmation",
+                new Dictionary<string, string>
+                {
+        { "CONFIRM_LINK", confirmLink }
+                });
+            Console.WriteLine(confirmLink);
+            var patient = new Patient
+            {
+                UserId = user.Id,
+                MedicalHistory = string.Empty,
+                ProfileImageUrl = null
+            };
+
+            await _unitOfWork.Repository<Patient>().AddAsync(patient);
+            await _unitOfWork.CompleteAsync();
+
+            return tempPassword;
         }
 
         public async Task<IEnumerable<AdminPatientDto>> GetAllAsync()

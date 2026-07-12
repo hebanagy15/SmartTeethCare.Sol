@@ -25,8 +25,9 @@ namespace SmartTeethCare.API.Controllers.AdminModule
 
             return Ok(new
             {
-                Message = "Patient created successfully",
+                Message = "Patient created successfully. A verification email has been sent.",
                 TemporaryPassword = tempPassword
+                
             });
         }
 

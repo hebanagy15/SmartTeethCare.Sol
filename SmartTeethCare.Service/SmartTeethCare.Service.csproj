@@ -7,6 +7,16 @@
 	</PropertyGroup>
 
 	<ItemGroup>
+	  <None Remove="EmailTemplates\EmailConfirmation.html" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <Content Include="EmailTemplates\EmailConfirmation.html">
+	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	  </Content>
+	</ItemGroup>
+
+	<ItemGroup>
 	  <PackageReference Include="Hangfire.Core" Version="1.8.23" />
 	  <PackageReference Include="MailKit" Version="4.16.0" />
 	  <PackageReference Include="Microsoft.AspNet.Identity.Core" Version="2.2.4" />
@@ -19,17 +29,10 @@
 	</ItemGroup>
 
 	<ItemGroup>
-	  <Folder Include="EmailTemplates\" />
-	</ItemGroup>
-
-	<ItemGroup>
 	  <None Update="EmailTemplates\AppointmentBooked.html">
 	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 	  </None>
 	  <None Update="EmailTemplates\CancelAppointment.html">
-	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-	  </None>
-	  <None Update="EmailTemplates\EmailConfirmation.html">
 	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 	  </None>
 	  <None Update="EmailTemplates\ReminderEmail.html">
