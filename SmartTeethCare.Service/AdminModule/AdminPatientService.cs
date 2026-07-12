@@ -1,4 +1,4 @@
-ï»¿using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using SmartTeethCare.Core.DTOs.AdminModule;
@@ -46,7 +46,7 @@ namespace SmartTeethCare.Service.AdminModule
 
             var user = new User
             {
-                UserName = dto.Email,              // ÙŠÙØ¶Ù„ ÙŠÙƒÙˆÙ† Ø§Ù„Ø¥ÙŠÙ…ÙŠÙ„
+                UserName = dto.Email,              // íİÖá íßæä ÇáÅíãíá
                 DisplayName = dto.FullName,
                 Email = dto.Email,
                 PhoneNumber = dto.PhoneNumber,
@@ -55,6 +55,8 @@ namespace SmartTeethCare.Service.AdminModule
                 DateOfBirth = dto.DateOfBirth,
                 CreatedAt = DateTime.Now,
                 UpdatedAt = DateTime.Now
+                PhoneNumber = dto.PhoneNumber,
+                EmailConfirmed = true
             };
 
             var result = await _userManager.CreateAsync(user, tempPassword);
