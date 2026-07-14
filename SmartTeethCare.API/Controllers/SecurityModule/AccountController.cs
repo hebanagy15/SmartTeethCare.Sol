@@ -215,7 +215,8 @@ namespace SmartTeethCare.API.Controllers.SecurityModule
         public async Task<IActionResult> ConfirmEmail([FromQuery] ConfirmEmailDTO dto)
         {
             await _authService.ConfirmEmailAsync(dto);
-            return Ok("Email confirmed successfully.");
+            //return Ok("Email confirmed successfully.");
+            return Redirect("https://dental-clinic-project-ten.vercel.app/login?confirmed=true");
         }
 
         [HttpPost("forgot-password")]

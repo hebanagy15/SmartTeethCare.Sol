@@ -46,7 +46,7 @@ namespace SmartTeethCare.Service.AdminModule
 
             var user = new User
             {
-                UserName = dto.Email,              // Ì›÷· ÌﬂÊ‰ «·≈Ì„Ì·
+                UserName = dto.Email,              
                 DisplayName = dto.FullName,
                 Email = dto.Email,
                 PhoneNumber = dto.PhoneNumber,
@@ -54,8 +54,7 @@ namespace SmartTeethCare.Service.AdminModule
                 Gender = dto.Gender,
                 DateOfBirth = dto.DateOfBirth,
                 CreatedAt = DateTime.Now,
-                UpdatedAt = DateTime.Now
-                PhoneNumber = dto.PhoneNumber,
+                UpdatedAt = DateTime.Now,
                 EmailConfirmed = true
             };
 
@@ -71,26 +70,7 @@ namespace SmartTeethCare.Service.AdminModule
 
             await _userManager.AddToRoleAsync(user, "Patient");
 
-            // Generate confirmation token
-            var token = await _userManager.GenerateEmailConfirmationTokenAsync(user);
-
-            // Encode token for URL
-            token = Uri.EscapeDataString(token);
-
-            // Confirmation URL
-            var confirmLink =
-                $"{_configuration["AppSettings:BaseUrl"]}/api/Account/confirm-email?userId={user.Id}&token={token}";
-
-            // Send confirmation email
-            await _emailService.SendTemplateEmailAsync(
-                user.Email!,
-                "Confirm your email",
-                "EmailConfirmation",
-                new Dictionary<string, string>
-                {
-        { "CONFIRM_LINK", confirmLink }
-                });
-            Console.WriteLine(confirmLink);
+        
             var patient = new Patient
             {
                 UserId = user.Id,
