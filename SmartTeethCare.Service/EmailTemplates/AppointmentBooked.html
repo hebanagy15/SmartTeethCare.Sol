@@ -1,41 +1,231 @@
 ﻿<!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Appointment Confirmed — Lunare Dental</title>
 </head>
-<body style="margin:0;padding:0;background:#eef3f7;font-family:Arial">
+<body style="margin:0;padding:0;background-color:#eef6f6;font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;color:#1a2e2e;">
 
-    <div style="max-width:600px;margin:auto;background:white;padding:25px;border-radius:12px;">
+    <!-- Outer wrapper -->
+    <table border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color:#eef6f6;padding:30px 0;">
+        <tr>
+            <td align="center">
 
-        <h2 style="color:#2c3e50;text-align:center;">🦷 Smart Teeth Care</h2>
+                <!-- Main card -->
+                <table border="0" cellpadding="0" cellspacing="0" width="620" style="background-color:#ffffff;border-radius:20px;overflow:hidden;box-shadow:0 8px 32px rgba(14,165,160,0.12);border-collapse:collapse;">
 
-        <h3 style="color:#2980b9;">Appointment Confirmed ✅</h3>
+                    <!-- ═══ HEADER ═══ -->
+                    <tr>
+                        <td style="background:linear-gradient(135deg,#0a2a2a 0%,#0d3d3d 50%,#0a2a2a 100%);padding:40px 40px 0 40px;text-align:center;">
 
-        <p>Dear Patient,</p>
+                            <!-- Logo -->
+                            <div style="margin-bottom:24px;">
+                                <div style="background-color: #ffffff; width: 60px; height: 60px; border-radius: 50%; display: inline-block; margin-bottom: 15px; line-height: 60px;">
+                                    <span style="font-size: 30px;">🦷</span>
+                                </div>
+                                <h1 style="color: #ffffff; margin: 0; font-size: 26px; font-weight: bold;">Lunare Smart Dental Clinic</h1>
+                                <p style="color: #e8f8f0; margin: 5px 0 20px 0; font-size: 14px; letter-spacing: 1px; text-transform: uppercase;">YOUR SMILE, OUR PRIORITY</p>
+                            </div>
 
-        <p>
-            We are honored to take care of your dental health 💙
-            Your appointment has been successfully booked.
-        </p>
+                            <!-- Confirmed badge -->
+                            <div style="display:inline-block;background:linear-gradient(135deg,#0ea5a0,#06d6d0);border-radius:50px;padding:10px 28px;margin-bottom:-22px;">
+                                <span style="color:#ffffff;font-size:13px;font-weight:700;letter-spacing:2px;text-transform:uppercase;">
+                                    ✓ &nbsp; Appointment Confirmed
+                                </span>
+                            </div>
 
-        <div style="background:#f8f9fa;padding:15px;border-radius:8px;">
-            <p><b>📅 Date:</b> {DATE}</p>
-            <p><b>👨‍⚕️ Doctor:</b> {DOCTOR}</p>
-        </div>
+                        </td>
+                    </tr>
 
-        <p>
-            Please arrive 10 minutes early to ensure a smooth experience.
-        </p>
+                    <!-- ═══ HERO STRIP ═══ -->
+                    <tr>
+                        <td style="background:linear-gradient(135deg,#0a2a2a 0%,#0d3d3d 100%);padding:40px 40px 50px 40px;text-align:center;">
+                            <h1 style="color:#ffffff;font-size:28px;font-weight:800;margin:30px 0 8px 0;letter-spacing:-0.5px;">
+                                Your Smile Appointment is Set! 🦷
+                            </h1>
+                            <p style="color:#7ecece;font-size:15px;margin:0;letter-spacing:0.5px;">
+                                Because Every Smile Deserves Perfection
+                            </p>
+                        </td>
+                    </tr>
 
-        <p style="margin-top:20px;">
-            We are looking forward to seeing you 😊
-        </p>
+                    <!-- ═══ GREETING ═══ -->
+                    <tr>
+                        <td style="padding:40px 40px 0 40px;">
+                            <p style="font-size:17px;color:#1a2e2e;margin:0 0 8px 0;">
+                                Dear <strong style="color:#0ea5a0;">{patient_name}</strong>,
+                            </p>
+                            <p style="font-size:15px;color:#4a6b6b;line-height:1.7;margin:0 0 30px 0;">
+                                Great news! Your appointment at <strong>Lunare Dental Clinic</strong> has been confirmed.
+                                We look forward to giving you the exceptional care you deserve. 💙
+                            </p>
+                        </td>
+                    </tr>
 
-        <p style="color:#7f8c8d;text-align:center;font-size:12px;">
-            Smart Teeth Care Team
-        </p>
+                    <!-- ═══ APPOINTMENT DETAILS CARD ═══ -->
+                    <tr>
+                        <td style="padding:0 40px;">
+                            <table border="0" cellpadding="0" cellspacing="0" width="100%"
+                                   style="background:linear-gradient(135deg,#f0fafa,#e6f5f5);border-radius:16px;border:1px solid #b2e0df;overflow:hidden;border-collapse:collapse;">
 
-    </div>
+                                <!-- Card header -->
+                                <tr>
+                                    <td colspan="2" style="background:linear-gradient(135deg,#0ea5a0,#08b8b2);padding:16px 24px;">
+                                        <span style="color:#ffffff;font-size:13px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;">
+                                            📋 &nbsp; Appointment Details
+                                        </span>
+                                    </td>
+                                </tr>
+
+                                <!-- Date row -->
+                                <tr>
+                                    <td width="50%" style="padding:20px 24px 12px 24px;vertical-align:top;border-right:1px solid #c8e8e7;">
+                                        <div style="font-size:11px;color:#7eb8b6;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:6px;">
+                                            📅 &nbsp; Date &amp; Time
+                                        </div>
+                                        <div style="font-size:17px;color:#0a2a2a;font-weight:700;">
+                                            {DATE}
+                                        </div>
+                                    </td>
+                                    <td width="50%" style="padding:20px 24px 12px 24px;vertical-align:top;">
+                                        <div style="font-size:11px;color:#7eb8b6;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:6px;">
+                                            👨‍⚕️ &nbsp; Your Doctor
+                                        </div>
+                                        <div style="font-size:17px;color:#0a2a2a;font-weight:700;">
+                                            {DOCTOR}
+                                        </div>
+                                    </td>
+                                </tr>
+
+                                <!-- Location row -->
+                                <tr>
+                                    <td colspan="2" style="padding:12px 24px 22px 24px;border-top:1px solid #c8e8e7;">
+                                        <div style="font-size:11px;color:#7eb8b6;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:6px;">
+                                            📍 &nbsp; Location
+                                        </div>
+                                        <div style="font-size:15px;color:#0a2a2a;font-weight:600;">
+                                            Lunare Dental Clinic &nbsp;·&nbsp; <span style="color:#4a6b6b;font-weight:400;">Cairo, Egypt</span>
+                                        </div>
+                                    </td>
+                                </tr>
+
+                            </table>
+                        </td>
+                    </tr>
+
+                    <!-- ═══ REMINDER BOX ═══ -->
+                    <tr>
+                        <td style="padding:24px 40px 0 40px;">
+                            <table border="0" cellpadding="0" cellspacing="0" width="100%"
+                                   style="background:#fff8e8;border-radius:12px;border-left:4px solid #f0a500;border-collapse:collapse;">
+                                <tr>
+                                    <td style="padding:16px 20px;">
+                                        <span style="font-size:14px;color:#7a5c00;line-height:1.6;">
+                                            ⏰ &nbsp;<strong>Reminder:</strong> Please arrive <strong>10 minutes early</strong> to complete any paperwork and ensure a smooth, relaxed experience.
+                                        </span>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+
+                    <!-- ═══ WHAT TO EXPECT ═══ -->
+                    <tr>
+                        <td style="padding:32px 40px 0 40px;">
+                            <p style="font-size:13px;color:#7eb8b6;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;margin:0 0 16px 0;">
+                                What to Expect
+                            </p>
+                            <table border="0" cellpadding="0" cellspacing="0" width="100%">
+                                <tr>
+                                    <td width="33%" style="text-align:center;padding:0 8px 0 0;vertical-align:top;">
+                                        <div style="background:#f0fafa;border-radius:12px;padding:20px 10px;">
+                                            <div style="font-size:28px;margin-bottom:8px;">🩺</div>
+                                            <div style="font-size:13px;font-weight:700;color:#0a2a2a;margin-bottom:4px;">Expert Care</div>
+                                            <div style="font-size:12px;color:#4a6b6b;">Certified specialist doctors</div>
+                                        </div>
+                                    </td>
+                                    <td width="34%" style="text-align:center;padding:0 4px;vertical-align:top;">
+                                        <div style="background:#f0fafa;border-radius:12px;padding:20px 10px;">
+                                            <div style="font-size:28px;margin-bottom:8px;">✨</div>
+                                            <div style="font-size:13px;font-weight:700;color:#0a2a2a;margin-bottom:4px;">Modern Tech</div>
+                                            <div style="font-size:12px;color:#4a6b6b;">Latest dental equipment</div>
+                                        </div>
+                                    </td>
+                                    <td width="33%" style="text-align:center;padding:0 0 0 8px;vertical-align:top;">
+                                        <div style="background:#f0fafa;border-radius:12px;padding:20px 10px;">
+                                            <div style="font-size:28px;margin-bottom:8px;">😊</div>
+                                            <div style="font-size:13px;font-weight:700;color:#0a2a2a;margin-bottom:4px;">Comfort First</div>
+                                            <div style="font-size:12px;color:#4a6b6b;">Stress-free environment</div>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+
+                    <!-- ═══ CTA BUTTON ═══ -->
+                    <tr>
+                        <td style="padding:36px 40px 0 40px;text-align:center;">
+                            <a href="https://dental-clinic-project-ten.vercel.app"
+                               style="display:inline-block;background:linear-gradient(135deg,#0ea5a0,#06c4be);color:#ffffff;text-decoration:none;padding:15px 42px;border-radius:50px;font-size:15px;font-weight:700;letter-spacing:0.5px;box-shadow:0 4px 20px rgba(14,165,160,0.35);">
+                                View My Appointment →
+                            </a>
+                        </td>
+                    </tr>
+
+                    <!-- ═══ CONTACT STRIP ═══ -->
+                    <tr>
+                        <td style="padding:36px 40px 0 40px;">
+                            <table border="0" cellpadding="0" cellspacing="0" width="100%"
+                                   style="background:linear-gradient(135deg,#0a2a2a,#0d3d3d);border-radius:16px;border-collapse:collapse;">
+                                <tr>
+                                    <td align="center" width="33%" style="padding:22px 10px;">
+                                        <div style="font-size:20px;margin-bottom:6px;">📞</div>
+                                        <div style="font-size:12px;color:#7ecece;font-weight:600;margin-bottom:3px;">Call Us</div>
+                                        <div style="font-size:13px;color:#ffffff;font-weight:700;">+2018173505</div>
+                                    </td>
+                                    <td align="center" width="34%" style="padding:22px 10px;border-left:1px solid #1a4040;border-right:1px solid #1a4040;">
+                                        <div style="font-size:20px;margin-bottom:6px;">🌐</div>
+                                        <div style="font-size:12px;color:#7ecece;font-weight:600;margin-bottom:3px;">Website</div>
+                                        <div style="font-size:13px;color:#0ea5a0;font-weight:700;">lunaredental.com</div>
+                                    </td>
+                                    <td align="center" width="33%" style="padding:22px 10px;">
+                                        <div style="font-size:20px;margin-bottom:6px;">🕒</div>
+                                        <div style="font-size:12px;color:#7ecece;font-weight:600;margin-bottom:3px;">Working Hours</div>
+                                        <div style="font-size:13px;color:#ffffff;font-weight:700;">Sun–Thu 9AM–8PM</div>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+
+                    <!-- ═══ FOOTER ═══ -->
+                    <tr>
+                        <td style="padding:30px 40px;text-align:center;">
+                            <p style="font-size:13px;color:#4a6b6b;margin:0 0 6px 0;line-height:1.6;">
+                                We're excited to see you! If you need to reschedule, please contact us at least 24 hours in advance.
+                            </p>
+                            <p style="font-size:13px;color:#0ea5a0;font-weight:700;margin:0 0 20px 0;">
+                                — The Lunare Dental Team 💙
+                            </p>
+                            <hr style="border:0;border-top:1px solid #e0eeee;margin:0 0 20px 0;">
+                            <p style="font-size:11px;color:#8aa8a8;margin:0 0 4px 0;">
+                                © 2026 Lunare Smart Dental Clinic. All rights reserved.
+                            </p>
+                            <p style="font-size:11px;color:#8aa8a8;margin:0;">
+                                Because Every Smile Deserves Perfection
+                            </p>
+                        </td>
+                    </tr>
+
+                </table>
+                <!-- /Main card -->
+
+            </td>
+        </tr>
+    </table>
 
 </body>
 </html>
+

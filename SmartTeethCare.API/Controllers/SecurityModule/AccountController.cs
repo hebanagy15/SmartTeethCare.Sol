@@ -148,7 +148,8 @@ namespace SmartTeethCare.API.Controllers.SecurityModule
                 "EmailConfirmation",
                 new Dictionary<string, string>
                 {
-                    { "CONFIRM_LINK", confirmationLink }
+                    { "CONFIRM_LINK", confirmationLink },
+                    { "patient_name", user.UserName }
                 }
             );
 
@@ -214,10 +215,22 @@ namespace SmartTeethCare.API.Controllers.SecurityModule
         [EnableRateLimiting("AuthPolicy")]
         public async Task<IActionResult> ConfirmEmail([FromQuery] ConfirmEmailDTO dto)
         {
-            await _authService.ConfirmEmailAsync(dto);
-            //return Ok("Email confirmed successfully.");
-            return Redirect("https://dental-clinic-project-ten.vercel.app/login?confirmed=true");
+            var frontendBaseUrl = "https://dental-clinic-project-ten.vercel.app";
+
+            try
+            {
+                await _authService.ConfirmEmailAsync(dto);
+                // ✅ تم التأكيد — روح صفحة اللوجين
+                return Redirect($"{frontendBaseUrl}/login?confirmed=true");
+            }
+            catch
+            {
+                // ❌ فشل التأكيد — روح صفحة خطأ
+                return Redirect($"{frontendBaseUrl}/email-confirmation-failed");
+            }
         }
+
+
 
         [HttpPost("forgot-password")]
         [EnableRateLimiting("AuthPolicy")]
@@ -258,6 +271,6 @@ namespace SmartTeethCare.API.Controllers.SecurityModule
 
             await _authService.RevokeTokenAsync(dto.RefreshToken);
             return Ok(new { message = "Logged out successfully." });
-        }
+        }  
     }
 }

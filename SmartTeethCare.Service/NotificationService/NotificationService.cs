@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity;
 using SmartTeethCare.Core.DTOs.Notification;
 using SmartTeethCare.Core.Entities;
 using SmartTeethCare.Core.Interfaces.Services.NotificationService;
@@ -58,6 +58,7 @@ namespace SmartTeethCare.Service.NotificationService
                     }
 
                     templateData["MESSAGE"] = message;
+                    templateData["patient_name"] = user.DisplayName ?? user.UserName ?? "Patient";
 
                     await _emailService.SendTemplateEmailAsync(
                         user.Email,
