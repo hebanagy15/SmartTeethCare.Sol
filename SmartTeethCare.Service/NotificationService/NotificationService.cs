@@ -77,6 +77,10 @@ namespace SmartTeethCare.Service.NotificationService
             if (appointment == null)
                 return;
 
+            var patient = await _unitOfWork.Repository<Patient>().GetByIdAsync(appointment.PatientID);
+            if (patient == null)
+                return;
+
             var doctor = await _unitOfWork.Repository<Doctor>().GetByIdAsync(appointment.DoctorID);
             var doctorUser = await _userManager.FindByIdAsync(doctor.UserId);
 
@@ -89,7 +93,7 @@ namespace SmartTeethCare.Service.NotificationService
             };
 
             await CreateAsync(
-                appointment.PatientID.ToString(),
+                patient.UserId,
                 "Reminder",
                 "Your appointment is coming soon",
                 true,

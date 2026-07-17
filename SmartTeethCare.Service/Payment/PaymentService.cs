@@ -304,12 +304,18 @@ namespace SmartTeethCare.Service.Services.Stripe
                     );
 
                     var appointmentDateTime = appointment.Date.Date + appointment.StartTime;
-                    var reminderTime = appointmentDateTime.ToUniversalTime().AddHours(-3);
-                    if (reminderTime > DateTime.UtcNow)
+                    
+                    var egyptTimeZone = TimeZoneInfo.FindSystemTimeZoneById("Egypt Standard Time");
+                    var appointmentDateTimeUnspecified = DateTime.SpecifyKind(appointmentDateTime, DateTimeKind.Unspecified);
+                    var appointmentUtc = TimeZoneInfo.ConvertTimeToUtc(appointmentDateTimeUnspecified, egyptTimeZone);
+                    
+                    var reminderTimeUtc = appointmentUtc.AddHours(-3);
+
+                    if (reminderTimeUtc > DateTime.UtcNow)
                     {
                         BackgroundJob.Schedule<INotificationService>(
                             x => x.SendReminderAsync(appointment.Id),
-                            reminderTime);
+                            reminderTimeUtc);
                     }
                 }
             }
